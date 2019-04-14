@@ -1,2 +1,9 @@
+
+
+```{r}
 rm(list = ls())
-#halo
+
+
+
+read.csv("train_Madison.csv", header = TRUE)
+```
