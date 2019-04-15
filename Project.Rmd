@@ -1,8 +1,4 @@
-<<<<<<< HEAD
-rm(list = ls())
 
-train = read.csv("")
-=======
 
 
 ```{r}
@@ -12,4 +8,3 @@ rm(list = ls())
 
 read.csv("train_Madison.csv", header = TRUE)
 ```
->>>>>>> f4ad6a632150bccb50d68fc12ffbe235cc7be472
