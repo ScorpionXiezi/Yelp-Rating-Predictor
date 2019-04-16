@@ -3,8 +3,12 @@
 
 ```{r}
 rm(list = ls())
+chart = read.csv("train_Madison.csv", header = TRUE)
+attach(chart)
 
-
-
-read.csv("train_Madison.csv", header = TRUE)
+rawdata = chart[c(2, 7:508)]
+model1 = lm(star ~ ., data = rawdata)
+trim = which(summary(model1)$coefficients[,4] < 0.01)
+model2 = lm(star ~ ., data = rawdata[trim])
+summary(model2)
 ```
