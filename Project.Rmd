@@ -4,11 +4,44 @@
 ```{r}
 rm(list = ls())
 chart = read.csv("train_Madison.csv", header = TRUE)
-attach(chart)
 
 rawdata = chart[c(2, 7:508)]
 model1 = lm(star ~ ., data = rawdata)
 trim = which(summary(model1)$coefficients[,4] < 0.01)
+trim = trim[-1]
+trim = trim - 1
 model2 = lm(star ~ ., data = rawdata[trim])
 summary(model2)
+
+test_data = read.csv("test_Madison.csv", header = TRUE)
+test_rawdata = test_data[6:507]
+coeff = summary(model2)$coefficients[-1,1]
+test_trim = test_rawdata[trim]
+
+#fit = coeff %*% test_trim
+nrow(test_trim)
+
+test_rawdata
+
+data.matrix(test_trim)
+fit_data = data.matrix(test_trim) %*% data.matrix(coeff)
+fit_data = fit_data + summary(model2)$coefficients[1,1]
+fit_data[fit_data > 5] = 5
+fit_data[fit_data < 1] = 1
+fit_data = "Expected"
+fit_data
+?write.csv
+write.csv(fit_data, "test_result.csv")
+
+
+fit = rep(summary(model2)$coefficients[1,1], length(coeff))
+
+for(i in 1:nrow(test_trim)){
+  for(j in 1:length(test_trim)){
+    fit[i] = fit[i] + coeff[j] * test_trim[i,j]
+  }
+}
+str(test_trim)
+fit
+
 ```
