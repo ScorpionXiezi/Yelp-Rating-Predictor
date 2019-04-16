@@ -28,20 +28,11 @@ fit_data = data.matrix(test_trim) %*% data.matrix(coeff)
 fit_data = fit_data + summary(model2)$coefficients[1,1]
 fit_data[fit_data > 5] = 5
 fit_data[fit_data < 1] = 1
-fit_data = "Expected"
-fit_data
-?write.csv
-write.csv(fit_data, "test_result.csv")
-
-
-fit = rep(summary(model2)$coefficients[1,1], length(coeff))
-
-for(i in 1:nrow(test_trim)){
-  for(j in 1:length(test_trim)){
-    fit[i] = fit[i] + coeff[j] * test_trim[i,j]
-  }
-}
-str(test_trim)
-fit
+result = as.data.frame(test_data[,1])
+colnames(result)[1] = "Id"
+result
+result$Expected = fit_data
+result
+write.csv(result, "test_result.csv")
 
 ```
