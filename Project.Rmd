@@ -30,8 +30,7 @@ colnames(result)[1] = "Id"
 result
 result$Expected = fit_data
 result
-write.csv(result, "test_result.csv")
-
+write.csv(result, "test_result.csv", row.names = FALSE)
 ```
 
 ```{r}
