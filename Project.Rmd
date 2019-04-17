@@ -45,4 +45,9 @@ sortResid = sort(abs(resid), decreasing = TRUE)
 Outlier = sortResid[1:100]
 Outlier
 ```
+```{r}
+par(mfrow = c(1,2))
+hist(resid, breaks = 100, main="Histogram of Residuals", xlab = "Residuals")
+plot(density(resid), main="Kernel Density of Residuals", xlab = "Residuals")
+```
 
