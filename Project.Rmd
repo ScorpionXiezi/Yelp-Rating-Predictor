@@ -33,3 +33,15 @@ result
 write.csv(result, "test_result.csv")
 
 ```
+
+
+
+
+
+```{r}
+l<-c() #cor of each predictor with star
+for (i in 1:502){
+  l[i]<-lm(chart[,2]~chart[,i+6])
+}
+```
+
