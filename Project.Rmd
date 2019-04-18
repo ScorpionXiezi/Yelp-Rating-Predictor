@@ -30,9 +30,21 @@ colnames(result)[1] = "Id"
 result
 result$Expected = fit_data
 result
-write.csv(result, "test_result.csv")
-
+write.csv(result, "test_result.csv", row.names = FALSE)
 ```
+
+```{r}
+yhat = predict(model2)
+yhat[yhat > 5] = 5
+yhat[yhat < 1] = 1
+resid = rawdata$star - yhat
+plot(chart$Id, resid, xlab = "ID", ylab = "Residuals", main = "Residual Plot",pch = 23,bg = "red",cex = 1.2)
+abline(a = 0, b = 0, col = "black", lwd = 3)
+sortResid = sort(abs(resid), decreasing = TRUE)
+Outlier = sortResid[1:100]
+Outlier
+```
+<<<<<<< HEAD
 
 
 
@@ -43,5 +55,11 @@ l<-c() #cor of each predictor with star
 for (i in 1:502){
   l[i]<-lm(chart[,2]~chart[,i+6])
 }
+=======
+```{r}
+par(mfrow = c(1,2))
+hist(resid, breaks = 100, main="Histogram of Residuals", xlab = "Residuals")
+plot(density(resid), main="Kernel Density of Residuals", xlab = "Residuals")
+>>>>>>> ac19ddd4e0aab6b849a45224d919f8297a19541f
 ```
 
