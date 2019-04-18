@@ -4,6 +4,29 @@
 ```{r}
 rm(list = ls())
 chart = read.csv("train_Madison.csv", header = TRUE)
+```
+
+```{r}
+l<-rep(0, 500) #cor of each predictor with star
+predictor_data = chart[,9:508]
+for (i in 1:500){
+  l[i] = cor(chart$star, predictor_data[,i])
+}
+
+order(l[1:500])
+most = names(predictor_data[order(l[1:500]) < 51])
+least = names(predictor_data[order(l[1:500]) > 451])
+
+most_sum = apply(predictor_data[,most], MARGIN = 1, FUN = sum)
+chart$most_sum = most_sum
+least_sum = apply(predictor_data[,least], MARGIN = 1, FUN = sum)
+chart$least_sum = least_sum
+```
+
+
+```{r}
+rawdata = chart[c(2, 7:510)]
+trim = 1:505
 
 chart
 rawdata = chart[c(2, 7:508)]
@@ -62,7 +85,7 @@ chart$most_sum = most_sum
 least_sum = apply(no_text_data[,least], MARGIN = 1, FUN = sum)
 chart$least_sum = least_sum
 ```
-
+  
 ```{r}
 par(mfrow = c(1,2))
 hist(resid, breaks = 100, main="Histogram of Residuals", xlab = "Residuals")
