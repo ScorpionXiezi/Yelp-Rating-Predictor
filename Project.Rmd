@@ -51,10 +51,20 @@ Outlier
 
 
 ```{r}
-l<-c() #cor of each predictor with star
-for (i in 1:502){
-  l[i]<-lm(chart[,2]~chart[,i+6])
+l<-rep(0, 502) #cor of each predictor with star
+no_text_data = chart[,9:508]
+for (i in 1:500){
+  l[i] = cor(chart$star, no_text_data[,i])
 }
+
+order(l[1:500])
+most = names(no_text_data[order(l[1:500]) < 51])
+least = names(no_text_data[order(l[1:500]) > 451])
+
+most_sum = apply(no_text_data[,most], MARGIN = 1, FUN = sum)
+chart$most_sum = most_sum
+least_sum = apply(no_text_data[,least], MARGIN = 1, FUN = sum)
+chart$least_sum = least_sum
 ```
 
 ```{r}
