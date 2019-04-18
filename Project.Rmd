@@ -5,6 +5,7 @@
 rm(list = ls())
 chart = read.csv("train_Madison.csv", header = TRUE)
 
+chart
 rawdata = chart[c(2, 7:508)]
 model1 = lm(star ~ ., data = rawdata)
 #summary(model1)
@@ -44,11 +45,6 @@ sortResid = sort(abs(resid), decreasing = TRUE)
 Outlier = sortResid[1:100]
 Outlier
 ```
-<<<<<<< HEAD
-
-
-
-
 
 ```{r}
 l<-rep(0, 502) #cor of each predictor with star
