@@ -3,8 +3,7 @@
 
 ```{r}
 rm(list = ls())
-chart = as.data.frame(read.csv("train_Madison.csv", header = TRUE))
-chart
+chart = read.csv("train_Madison.csv", header = TRUE)
 ```
 
 ```{r}
