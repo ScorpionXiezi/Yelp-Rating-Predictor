@@ -2,8 +2,10 @@
 
 
 ```{r}
+library(nnet)
 rm(list = ls())
 chart = read.csv("train_Madison.csv", header = TRUE)
+chart$
 
 rawdata = chart[c(2, 7:508)]
 model1 = lm(star ~ ., data = rawdata)
@@ -13,13 +15,11 @@ model2 = lm(star ~ ., data = rawdata[trim])
 #summary(model2)
 trim = trim[-1]
 trim = trim - 1
-trim
 
 test_data = read.csv("test_Madison.csv", header = TRUE)
 test_rawdata = test_data[6:507]
 coeff = summary(model2)$coefficients[-1,1]
 test_trim = test_rawdata[trim]
-data.matrix(test_trim)
 
 fit_data = data.matrix(test_trim) %*% data.matrix(coeff)
 fit_data = fit_data + summary(model2)$coefficients[1,1]
@@ -27,7 +27,6 @@ fit_data[fit_data > 5] = 5
 fit_data[fit_data < 1] = 1
 result = as.data.frame(test_data[,1])
 colnames(result)[1] = "Id"
-result
 result$Expected = fit_data
 result
 write.csv(result, "test_result.csv")
