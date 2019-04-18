@@ -29,6 +29,46 @@ result = as.data.frame(test_data[,1])
 colnames(result)[1] = "Id"
 result$Expected = fit_data
 result
-write.csv(result, "test_result.csv")
-
+write.csv(result, "test_result.csv", row.names = FALSE)
 ```
+
+```{r}
+yhat = predict(model2)
+yhat[yhat > 5] = 5
+yhat[yhat < 1] = 1
+resid = rawdata$star - yhat
+plot(chart$Id, resid, xlab = "ID", ylab = "Residuals", main = "Residual Plot",pch = 23,bg = "red",cex = 1.2)
+abline(a = 0, b = 0, col = "black", lwd = 3)
+sortResid = sort(abs(resid), decreasing = TRUE)
+Outlier = sortResid[1:100]
+Outlier
+```
+<<<<<<< HEAD
+
+
+
+
+
+```{r}
+l<-rep(0, 502) #cor of each predictor with star
+no_text_data = chart[,9:508]
+for (i in 1:500){
+  l[i] = cor(chart$star, no_text_data[,i])
+}
+
+order(l[1:500])
+most = names(no_text_data[order(l[1:500]) < 51])
+least = names(no_text_data[order(l[1:500]) > 451])
+
+most_sum = apply(no_text_data[,most], MARGIN = 1, FUN = sum)
+chart$most_sum = most_sum
+least_sum = apply(no_text_data[,least], MARGIN = 1, FUN = sum)
+chart$least_sum = least_sum
+```
+
+```{r}
+par(mfrow = c(1,2))
+hist(resid, breaks = 100, main="Histogram of Residuals", xlab = "Residuals")
+plot(density(resid), main="Kernel Density of Residuals", xlab = "Residuals")
+```
+
