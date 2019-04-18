@@ -13,7 +13,6 @@ for (i in 1:500){
   l[i] = cor(chart$star, predictor_data[,i])
 }
 
-order(l[1:500])
 most = names(predictor_data[order(l[1:500]) < 51])
 least = names(predictor_data[order(l[1:500]) > 451])
 
@@ -25,32 +24,8 @@ chart$least_sum = least_sum
 
 
 ```{r}
-rawdata = chart[c(2, 7:510)]
-trim = 1:505
-
-chart
-rawdata = chart[c(2, 7:508)]
-model1 = lm(star ~ ., data = rawdata)
-#summary(model1)
-trim = which(summary(model1)$coefficients[,4] < 1)
-model2 = lm(star ~ ., data = rawdata[trim])
-#summary(model2)
-trim = trim[-1]
-trim = trim - 1
-trim
-
-most = names(predictor_data[order(l[1:500]) < 51])
-least = names(predictor_data[order(l[1:500]) > 451])
-
-most_sum = apply(predictor_data[,most], MARGIN = 1, FUN = sum)
-
-least_sum = apply(predictor_data[,least], MARGIN = 1, FUN = sum)
-chart$portion = (most_sum+1) / (least_sum+1)
 rawdata = chart[c(2, 7:509)]
 trim = c(1:504)
-```
-
-```{r}
 model1 = lm(star ~ ., data = rawdata[trim])
 yhat = predict(model1)
 yhat[yhat > 5] = 5
@@ -63,23 +38,6 @@ abline(a = 0, b = 0, col = "black", lwd = 3)
 sortResid = sort(abs(resid), decreasing = TRUE)
 Outlier = sortResid[1:100]
 Outlier
-```
-
-```{r}
-l<-rep(0, 502) #cor of each predictor with star
-no_text_data = chart[,9:508]
-for (i in 1:500){
-  l[i] = cor(chart$star, no_text_data[,i])
-}
-
-order(l[1:500])
-most = names(no_text_data[order(l[1:500]) < 51])
-least = names(no_text_data[order(l[1:500]) > 451])
-
-most_sum = apply(no_text_data[,most], MARGIN = 1, FUN = sum)
-chart$most_sum = most_sum
-least_sum = apply(no_text_data[,least], MARGIN = 1, FUN = sum)
-chart$least_sum = least_sum
 ```
   
 ```{r}
