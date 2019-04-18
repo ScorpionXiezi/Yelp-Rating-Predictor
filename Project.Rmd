@@ -5,48 +5,95 @@
 rm(list = ls())
 chart = read.csv("train_Madison.csv", header = TRUE)
 
-rawdata = chart[c(2, 7:508)]
-model1 = lm(star ~ ., data = rawdata)
-#summary(model1)
-trim = which(summary(model1)$coefficients[,4] < 1)
-model2 = lm(star ~ ., data = rawdata[trim])
-#summary(model2)
-trim = trim[-1]
-trim = trim - 1
-trim
+l<-rep(0, 500) #cor of each predictor with star
+predictor_data = chart[,9:508]
+for (i in 1:500){
+  l[i] = cor(chart$star, predictor_data[,i])
+}
 
-test_data = read.csv("test_Madison.csv", header = TRUE)
-test_rawdata = test_data[6:507]
-coeff = summary(model2)$coefficients[-1,1]
-test_trim = test_rawdata[trim]
-data.matrix(test_trim)
+most = names(predictor_data[order(l[1:500]) < 51])
+least = names(predictor_data[order(l[1:500]) > 451])
 
-fit_data = data.matrix(test_trim) %*% data.matrix(coeff)
-fit_data = fit_data + summary(model2)$coefficients[1,1]
-fit_data[fit_data > 5] = 5
-fit_data[fit_data < 1] = 1
-result = as.data.frame(test_data[,1])
-colnames(result)[1] = "Id"
-result
-result$Expected = fit_data
-result
-write.csv(result, "test_result.csv", row.names = FALSE)
+most_sum = apply(predictor_data[,most], MARGIN = 1, FUN = sum)
+
+least_sum = apply(predictor_data[,least], MARGIN = 1, FUN = sum)
+chart$portion = (most_sum+1) / (least_sum+1)
+rawdata = chart[c(2, 7:509)]
+trim = c(1:504)
 ```
 
 ```{r}
-yhat = predict(model2)
+model1 = lm(star ~ ., data = rawdata[trim])
+yhat = predict(model1)
 yhat[yhat > 5] = 5
 yhat[yhat < 1] = 1
 resid = rawdata$star - yhat
+SSE = sum(resid^2)
+SSE
 plot(chart$Id, resid, xlab = "ID", ylab = "Residuals", main = "Residual Plot",pch = 23,bg = "red",cex = 1.2)
 abline(a = 0, b = 0, col = "black", lwd = 3)
 sortResid = sort(abs(resid), decreasing = TRUE)
 Outlier = sortResid[1:100]
 Outlier
 ```
+
 ```{r}
 par(mfrow = c(1,2))
 hist(resid, breaks = 100, main="Histogram of Residuals", xlab = "Residuals")
 plot(density(resid), main="Kernel Density of Residuals", xlab = "Residuals")
 ```
 
+```{r}
+coefSum = rep(0, ncol(rawdata[trim[-1]]))
+interSum = 0
+for (i in 1:100){
+  list = sample(x = 1:nrow(rawdata[trim]), size = 5000)
+  model.random = lm(star ~ ., data = rawdata[list, trim])
+  coefSum = coefSum + summary(model.random)$coefficients[-1,1]
+  interSum = interSum + summary(model.random)$coefficients[1,1]
+}
+fitRaw = data.matrix(rawdata[trim[-1]]) %*% data.matrix(coefSum/100)
+fitRaw = fitRaw + interSum/100
+fitRaw[fitRaw > 5] = 5
+fitRaw[fitRaw < 1] = 1
+residNew = rawdata$star - fitRaw
+SSENew = sum(residNew^2)
+SSENew
+#model1 = lm(star ~ ., data = rawdata)
+#summary(model1)
+#trim = which(summary(model1)$coefficients[,4] < 1)
+#model2 = lm(star ~ ., data = rawdata[trim])
+#summary(model2)
+
+```
+
+
+```{r}
+trim = trim[-1]
+trim = trim - 1
+
+test_data = read.csv("test_Madison.csv", header = TRUE)
+
+predictor_data = test_data[,8:507]
+most = names(predictor_data[order(l[1:500]) < 51])
+least = names(predictor_data[order(l[1:500]) > 451])
+
+most_sum = apply(predictor_data[,most], MARGIN = 1, FUN = sum)
+
+least_sum = apply(predictor_data[,least], MARGIN = 1, FUN = sum)
+test_data$portion = (most_sum+1) / (least_sum+1)
+test_rawdata = test_data[6:508]
+test_trim = test_rawdata[trim]
+```
+
+```{r}
+fit_data = data.matrix(test_trim) %*% data.matrix(coefSum/100)
+fit_data = fit_data + interSum/100
+fit_data[fit_data > 5] = 5
+fit_data[fit_data < 1] = 1
+result = as.data.frame(test_data[,1])
+colnames(result)[1] = "Id"
+result$Expected = fit_data
+result
+write.csv(result, "test_result.csv", row.names = FALSE)
+```
