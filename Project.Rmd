@@ -1,7 +1,7 @@
 ---
 title: "STAT 333 Project Two"
 Author1: "Xinyi Yu  xyu286@wisc.edu"
-Author2: 
+Author2:  "Xiu Xie   @wisc.edu"
 Authour3: "Yuhan Xie   xie75@wisc.edu"  
 Author4: "Yuwen Zhang  zhang924@wisc.edu"
 date: 04/20/2019
@@ -31,7 +31,7 @@ most = names(predictor_data[order(l[1:500]) < 51])
 least = names(predictor_data[order(l[1:500]) > 451])
 not_important = names(predictor_data[order(l[1:500]) < 400 & order(l[1:500]) > 100])
 
-data_transform = function(data, test = FALSE, eliminate = TRUE, portion = TRUE) {
+data_transform = function(data = chart, test = FALSE, eliminate = TRUE, portion = TRUE, city = FALSE, origin = chart) {
   #find the most positive and negative words
   
   data = data[colnames(data) != "chicago" & colnames(data) != "wisconsin"]
@@ -39,12 +39,10 @@ data_transform = function(data, test = FALSE, eliminate = TRUE, portion = TRUE) 
   if(eliminate == TRUE){
     data = data[!(colnames(data) %in% not_important)]
   }
-  
+
   #calculate the number of extreme words
   most_sum = apply(data[,most], MARGIN = 1, FUN = sum)
-  #data$most_sum = most_sum
   least_sum = apply(data[,least], MARGIN = 1, FUN = sum)
-  #data$least_sum = least_sum
   
   data$exclam = rep(0, nrow(data))
   data$question = rep(0, nrow(data))
@@ -54,16 +52,37 @@ data_transform = function(data, test = FALSE, eliminate = TRUE, portion = TRUE) 
   data$wtf = rep(0, nrow(data))
   data$hate = rep(0, nrow(data))
   data$zero = rep(0, nrow(data))
-  
+  data$dots_count = rep(0, nrow(data))
+  data$capital = rep(0, nrow(data))
   trim = ((which(colnames(data) == "nword"))+1):length(data)
   
-  if(portion == TRUE){
-    data[trim] = data[trim] / data$nword
-  }
+  
   data$portion = (most_sum+1) / (least_sum+1)
+  data$exclam = rep(0, nrow(data))
+  data$question = rep(0, nrow(data))
+  
+  
   
   for(i in 1:nrow(data)){
     text = data$text[i]
+    
+    #create dummy for city names
+    if(city == TRUE) {
+      if(test == FALSE) {
+        if(!(data$city[i] %in% colnames(data))){
+          data$new_col = rep(0, nrow(data))
+          colnames(data)[length(data)] = data$city[i]
+        }
+        data[i, colnames(data) == data$city[i]] = 1
+      }
+      if(test == TRUE){
+        if((data$city[i] %in% colnames(origin))){
+          data[i, colnames(data) == data$city[i]] = 1
+        }
+      }
+    }
+
+    #count punctuations
     data$exclam[i] = str_count(text, pattern = "!")
     data$question[i] = str_count(text, pattern = "\\?")
     data$fivestar[i] = str_count(text, pattern = "5 star")
@@ -72,6 +91,13 @@ data_transform = function(data, test = FALSE, eliminate = TRUE, portion = TRUE) 
     data$wtf[i] = sum(str_count(text, pattern = c("wtf","WTF")))
     data$hate[i] = str_count(text, pattern = "hate")
     data$zero[i] = sum(str_count(text, pattern = c("zero","ZERO")))
+    data$dots_count[i] = str_count(text, pattern = "\\.")
+    data$capital[i] = str_count(text, pattern = "[ABCDEFGHIJKLMNOPQRSTUVWXYZ]")
+  }
+  
+  #transform all count of words to portion of text
+  if(portion == TRUE){
+    data[trim] = data[trim] / data$nword
   }
   return(data)
 }
@@ -79,7 +105,7 @@ data_transform = function(data, test = FALSE, eliminate = TRUE, portion = TRUE) 
 transformed_data = data_transform(chart, eliminate = FALSE, portion = TRUE)
 trim = (which(colnames(transformed_data) == "nchar")):length(transformed_data)
 #head(transformed_data)
-#transformed_data[,507:509]
+transformed_data[,(length(transformed_data) - 20):length(transformed_data)]
 chart = transformed_data
 ```
 
@@ -93,6 +119,7 @@ yhat[yhat < 1] = 1
 resid = chart$star - yhat
 SSE = sum(resid^2)
 SSE
+summary(model1)$p_value
 plot(chart$Id, resid, xlab = "ID", ylab = "Residuals", main = "Residual Plot",pch = 23,bg = "red",cex = 1.2)
 abline(a = 0, b = 0, col = "black", lwd = 3)
 sortResid = sort(abs(resid), decreasing = TRUE)
@@ -110,13 +137,17 @@ plot(density(resid), main="Kernel Density of Residuals", xlab = "Residuals")
 coefSum = rep(0, ncol(chart[trim]))
 interSum = 0
 count = 0
-for (i in 1:200){
-  list = sample(x = 1:nrow(chart), size = 5000)
-  model.random = lm(star ~ . , data = chart[list, c(2, trim)])
+
+for (i in 1:100){
+  list = sample(x = 1:nrow(chart), size = 10000)
+  model.random = lm(star ~ ., data = chart[list, c(2, trim)])
   if(length(summary(model.random)$coefficients[-1,1]) == length(trim)){
     coefSum = coefSum + summary(model.random)$coefficients[-1,1]
     interSum = interSum + summary(model.random)$coefficients[1,1]
     count = count + 1
+  }
+  else{
+    tail(summary(model.random))
   }
 }
 fitRaw = data.matrix(chart[trim]) %*% data.matrix(coefSum/count)
@@ -138,7 +169,7 @@ SSENew
 ```{r}
 test_data = read_csv("test_Madison.csv")
 head(test_data)
-test_data = data_transform(test_data, eliminate = FALSE, portion = TRUE)
+test_data = data_transform(test_data, eliminate = FALSE, portion = TRUE, test = TRUE, origin = chart)
 trim = (which(colnames(test_data) == "nchar")):length(test_data)
 ```
 
