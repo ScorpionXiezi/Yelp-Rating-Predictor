@@ -1,4 +1,12 @@
-
+---
+title: "STAT 333 Project Two"
+Author1: "Xinyi Yu  xyu286@wisc.edu"
+Author2: 
+Authour3: "Yuhan Xie   xie75@wisc.edu"  
+Author4: "Yuwen Zhang  zhang924@wisc.edu"
+date: 04/20/2019
+output: html_document
+---
 
 
 ```{r}
@@ -8,7 +16,7 @@ library(stringr)
 rm(list = ls())
 chart = read_csv("train_Madison.csv")
 origin_data = chart
-head(chart)
+#head(chart)
 ```
 
 ```{r}
@@ -22,6 +30,7 @@ for (i in 1:500){
 most = names(predictor_data[order(l[1:500]) < 51])
 least = names(predictor_data[order(l[1:500]) > 451])
 not_important = names(predictor_data[order(l[1:500]) < 400 & order(l[1:500]) > 100])
+
 data_transform = function(data, test = FALSE, eliminate = TRUE, portion = TRUE) {
   #find the most positive and negative words
   
@@ -58,8 +67,8 @@ data_transform = function(data, test = FALSE, eliminate = TRUE, portion = TRUE) 
 
 transformed_data = data_transform(chart, eliminate = FALSE, portion = TRUE)
 trim = (which(colnames(transformed_data) == "nchar")):length(transformed_data)
-head(transformed_data)
-transformed_data[,507:509]
+#head(transformed_data)
+#transformed_data[,507:509]
 chart = transformed_data
 ```
 
@@ -88,18 +97,18 @@ plot(density(resid), main="Kernel Density of Residuals", xlab = "Residuals")
 ```{r}
 coefSum = rep(0, ncol(chart[trim]))
 interSum = 0
+count = 0
 for (i in 1:100){
   list = sample(x = 1:nrow(chart), size = 5000)
   model.random = lm(star ~ ., data = chart[list, c(2, trim)])
-  if(length(summary(model.random)$coefficients[-1,1]) != 503){
-    print(summary(model.random))
-    break
+  if(length(summary(model.random)$coefficients[-1,1]) == length(trim)){
+    coefSum = coefSum + summary(model.random)$coefficients[-1,1]
+    interSum = interSum + summary(model.random)$coefficients[1,1]
+    count = count + 1
   }
-  coefSum = coefSum + summary(model.random)$coefficients[-1,1]
-  interSum = interSum + summary(model.random)$coefficients[1,1]
 }
-fitRaw = data.matrix(chart[trim]) %*% data.matrix(coefSum/100)
-fitRaw = fitRaw + interSum/100
+fitRaw = data.matrix(chart[trim]) %*% data.matrix(coefSum/count)
+fitRaw = fitRaw + interSum/count
 fitRaw[fitRaw > 5] = 5
 fitRaw[fitRaw < 1] = 1
 residNew = chart$star - fitRaw
@@ -122,12 +131,11 @@ test_data = read_csv("test_Madison.csv")
 head(test_data)
 test_data = data_transform(test_data, eliminate = FALSE, portion = TRUE)
 trim = (which(colnames(test_data) == "nchar")):length(test_data)
-trim
 ```
 
 ```{r}
-fit_data = data.matrix(test_data[trim]) %*% data.matrix(coefSum/100)
-fit_data = fit_data + interSum/100
+fit_data = data.matrix(test_data[trim]) %*% data.matrix(coefSum/count)
+fit_data = fit_data + interSum/count
 fit_data[fit_data > 5] = 5
 fit_data[fit_data < 1] = 1
 result = as.data.frame(test_data[,1])
