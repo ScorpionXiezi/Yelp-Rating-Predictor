@@ -124,8 +124,6 @@ SSENew
 
 
 ```{r}
-trim = trim[-1]
-trim = trim - 1
 
 test_data = read_csv("test_Madison.csv")
 head(test_data)
