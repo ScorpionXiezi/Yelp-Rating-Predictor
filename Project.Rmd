@@ -48,6 +48,13 @@ data_transform = function(data, test = FALSE, eliminate = TRUE, portion = TRUE) 
   
   data$exclam = rep(0, nrow(data))
   data$question = rep(0, nrow(data))
+  data$fivestar = rep(0, nrow(data))
+  data$disgust = rep(0, nrow(data))
+  data$omg = rep(0, nrow(data))
+  data$wtf = rep(0, nrow(data))
+  data$hate = rep(0, nrow(data))
+  data$zero = rep(0, nrow(data))
+  
   trim = ((which(colnames(data) == "nword"))+1):length(data)
   
   if(portion == TRUE){
@@ -59,11 +66,15 @@ data_transform = function(data, test = FALSE, eliminate = TRUE, portion = TRUE) 
     text = data$text[i]
     data$exclam[i] = str_count(text, pattern = "!")
     data$question[i] = str_count(text, pattern = "\\?")
+    data$fivestar[i] = str_count(text, pattern = "5 star")
+    data$disgust[i] = str_count(text, pattern = "disgust")
+    data$omg[i] = str_count(text, pattern = "OMG")
+    data$wtf[i] = sum(str_count(text, pattern = c("wtf","WTF")))
+    data$hate[i] = str_count(text, pattern = "hate")
+    data$zero[i] = sum(str_count(text, pattern = c("zero","ZERO")))
   }
-  
   return(data)
 }
-
 
 transformed_data = data_transform(chart, eliminate = FALSE, portion = TRUE)
 trim = (which(colnames(transformed_data) == "nchar")):length(transformed_data)
@@ -74,7 +85,8 @@ chart = transformed_data
 
 
 ```{r}
-model1 = lm(star ~ ., data = chart[c(2,trim)])
+model1 = lm(star ~ . , data = chart[c(2,trim)])
+#summary(model1)$coefficients[-1,4]
 yhat = predict(model1)
 yhat[yhat > 5] = 5
 yhat[yhat < 1] = 1
@@ -98,9 +110,9 @@ plot(density(resid), main="Kernel Density of Residuals", xlab = "Residuals")
 coefSum = rep(0, ncol(chart[trim]))
 interSum = 0
 count = 0
-for (i in 1:100){
+for (i in 1:200){
   list = sample(x = 1:nrow(chart), size = 5000)
-  model.random = lm(star ~ ., data = chart[list, c(2, trim)])
+  model.random = lm(star ~ . , data = chart[list, c(2, trim)])
   if(length(summary(model.random)$coefficients[-1,1]) == length(trim)){
     coefSum = coefSum + summary(model.random)$coefficients[-1,1]
     interSum = interSum + summary(model.random)$coefficients[1,1]
@@ -124,9 +136,6 @@ SSENew
 
 
 ```{r}
-trim = trim[-1]
-trim = trim - 1
-
 test_data = read_csv("test_Madison.csv")
 head(test_data)
 test_data = data_transform(test_data, eliminate = FALSE, portion = TRUE)
