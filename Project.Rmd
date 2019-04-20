@@ -21,78 +21,106 @@ origin_data = chart
 
 ```{r}
 chart = origin_data
-l<-rep(0, 500) #cor of each predictor with star
-predictor_data = chart[,9:508]
-for (i in 1:500){
-  l[i] = cor(chart$star, predictor_data[,i])
-}
 
-most = names(predictor_data[order(l[1:500]) < 51])
-least = names(predictor_data[order(l[1:500]) > 451])
-not_important = names(predictor_data[order(l[1:500]) < 400 & order(l[1:500]) > 100])
+#pos_new = scan("new_words.txt", what = character())
 
-data_transform = function(data = chart, test = FALSE, eliminate = TRUE, portion = TRUE, city = FALSE, origin = chart) {
-  #find the most positive and negative words
+data_transform = function(data = chart, test = FALSE, eliminate = FALSE, portion = TRUE, create = TRUE, origin = chart) {
   
   data = data[colnames(data) != "chicago" & colnames(data) != "wisconsin"]
-  #eliminate unimportant variables
-  if(eliminate == TRUE){
-    data = data[!(colnames(data) %in% not_important)]
+  colnames(data)[colnames(data) == "name"] = "NAME"
+  colnames(data)[colnames(data) == "city"] = "CITY"
+  colnames(data)[colnames(data) == "text"] = "TEXT"
+  colnames(data)[colnames(data) == "star"] = "STAR"
+  if(create == TRUE){
+    data = data[1:which(colnames(data) == "nword")]
   }
-
-  #calculate the number of extreme words
-  most_sum = apply(data[,most], MARGIN = 1, FUN = sum)
-  least_sum = apply(data[,least], MARGIN = 1, FUN = sum)
+  if(create == FALSE){
+    data$disgust = rep(0, nrow(data))
+    data$omg = rep(0, nrow(data))
+    data$wtf = rep(0, nrow(data))
+    data$hate = rep(0, nrow(data))
+    data$zero = rep(0, nrow(data))
+  }
   
   data$exclam = rep(0, nrow(data))
   data$question = rep(0, nrow(data))
   data$fivestar = rep(0, nrow(data))
-  data$disgust = rep(0, nrow(data))
-  data$omg = rep(0, nrow(data))
-  data$wtf = rep(0, nrow(data))
-  data$hate = rep(0, nrow(data))
-  data$zero = rep(0, nrow(data))
   data$dots_count = rep(0, nrow(data))
   data$capital = rep(0, nrow(data))
-  trim = ((which(colnames(data) == "nword"))+1):length(data)
-  
-  
-  data$portion = (most_sum+1) / (least_sum+1)
-  data$exclam = rep(0, nrow(data))
-  data$question = rep(0, nrow(data))
-  
-  
-  
   for(i in 1:nrow(data)){
-    text = data$text[i]
-    
-    #create dummy for city names
-    if(city == TRUE) {
-      if(test == FALSE) {
-        if(!(data$city[i] %in% colnames(data))){
-          data$new_col = rep(0, nrow(data))
-          colnames(data)[length(data)] = data$city[i]
-        }
-        data[i, colnames(data) == data$city[i]] = 1
-      }
-      if(test == TRUE){
-        if((data$city[i] %in% colnames(origin))){
-          data[i, colnames(data) == data$city[i]] = 1
-        }
-      }
+    if(i%1000 == 0){
+      print(i)
     }
-
+    text = data$TEXT[i]
+    #---------------------------
+    if(create == TRUE){
+      if(i < 1000){
+        words = str_extract_all(tolower(text), "[a-z]+")
+        for(j in 1:length(words[[1]])){
+          words[[1]][j]
+          if(!(words[[1]][j] %in% colnames(data))){
+            data$new_col = rep(0, nrow(data))
+            data$new_col[i] = 1
+            colnames(data)[ncol(data)] = words[[1]][j]
+          }else{
+            data[i, which(colnames(data) == words[[1]][j])]
+            data[i, which(colnames(data) == words[[1]][j])] = data[i, which(colnames(data) == words[[1]][j])] + 1
+          }
+        }
+      }
+      if(i == 1000){
+        delete_index = c()
+        for(j in which(colnames(data) == "nword"):length(data)){
+          if(sum(data[j]) < 5)
+            delete_index = c(delete_index, j)
+        }
+        data = data[-delete_index]
+        print(length(data))
+      }
+      if(i >= 1000){
+        lower_text = tolower(text)
+        for(j in which(colnames(data) == "nword"):length(data)){
+          data[i, j] = str_count(lower_text, pattern = colnames(data[j]))
+        }
+      }
+    }else{
+      data$disgust[i] = str_count(tolower(text), pattern = "disgust")
+      data$omg[i] = str_count(text, pattern = "OMG")
+      data$wtf[i] = str_count(tolower(text), pattern = "wtf")
+      data$hate[i] = str_count(tolower(text), pattern = "hate")
+      data$zero[i] = str_count(tolower(text), pattern = "zero")
+    }
+    
     #count punctuations
     data$exclam[i] = str_count(text, pattern = "!")
     data$question[i] = str_count(text, pattern = "\\?")
     data$fivestar[i] = str_count(text, pattern = "5 star")
-    data$disgust[i] = str_count(text, pattern = "disgust")
-    data$omg[i] = str_count(text, pattern = "OMG")
-    data$wtf[i] = sum(str_count(text, pattern = c("wtf","WTF")))
-    data$hate[i] = str_count(text, pattern = "hate")
-    data$zero[i] = sum(str_count(text, pattern = c("zero","ZERO")))
     data$dots_count[i] = str_count(text, pattern = "\\.")
     data$capital[i] = str_count(text, pattern = "[ABCDEFGHIJKLMNOPQRSTUVWXYZ]")
+  }
+  
+  trim = ((which(colnames(data) == "nword"))+1):length(data)
+  #find the most influencial predictors
+  predictor_data = origin[trim]
+  l<-rep(0, length(predictor_data)) #cor of each predictor with star
+  for (i in 1:length(predictor_data)){
+    l[i] = cor(origin$star, predictor_data[,i])
+  }
+  most = names(predictor_data[order(l) < 51])
+  least = names(predictor_data[order(l) > (length(l) - 51)])
+  #calculate the number of extreme words
+  most_sum = apply(data[,most], MARGIN = 1, FUN = sum)
+  least_sum = apply(data[,least], MARGIN = 1, FUN = sum)
+  
+  not_important = names(predictor_data[order(l) < length(l)-100 & order(l) > 100])
+  #-----------------------
+  
+  data$portion = (most_sum+1) / (least_sum+1)
+  
+  
+  #eliminate unimportant variables
+  if(eliminate == TRUE){
+    data = data[!(colnames(data) %in% not_important)]
   }
   
   #transform all count of words to portion of text
@@ -105,7 +133,7 @@ data_transform = function(data = chart, test = FALSE, eliminate = TRUE, portion 
 transformed_data = data_transform(chart, eliminate = FALSE, portion = TRUE)
 trim = (which(colnames(transformed_data) == "nchar")):length(transformed_data)
 #head(transformed_data)
-transformed_data[,(length(transformed_data) - 20):length(transformed_data)]
+transformed_data[,(length(transformed_data) - 50):length(transformed_data)]
 chart = transformed_data
 ```
 
