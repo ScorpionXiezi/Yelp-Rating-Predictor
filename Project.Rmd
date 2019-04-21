@@ -1,7 +1,7 @@
 ---
 title: "STAT 333 Project Two"
 Author1: "Xinyi Yu  xyu286@wisc.edu"
-Author2:  "Xiu Xie   xxie65@wisc.edu"
+Author2:  "Xiu Xie   @wisc.edu"
 Authour3: "Yuhan Xie   xie75@wisc.edu"  
 Author4: "Yuwen Zhang  zhang924@wisc.edu"
 date: 04/20/2019
@@ -15,17 +15,20 @@ library(stringr)
 
 rm(list = ls())
 chart = read_csv("train_Madison.csv")
-origin_data = chart
+#origin_data = chart
 #head(chart)
 ```
 
 ```{r}
-chart = origin_data
+#chart = origin_data
 
 #pos_new = scan("new_words.txt", what = character())
 
-data_transform = function(data = chart, test = FALSE, eliminate = FALSE, portion = TRUE, create = TRUE, origin = chart) {
-  
+data_transform = function(data = chart, test = FALSE, portion = TRUE, create = TRUE, origin = chart) {
+  data = chart
+  test = FALSE
+  portion = TRUE
+  create = TRUE
   data = data[colnames(data) != "chicago" & colnames(data) != "wisconsin"]
   colnames(data)[colnames(data) == "name"] = "NAME"
   colnames(data)[colnames(data) == "city"] = "CITY"
@@ -33,96 +36,110 @@ data_transform = function(data = chart, test = FALSE, eliminate = FALSE, portion
   colnames(data)[colnames(data) == "star"] = "STAR"
   if(create == TRUE){
     data = data[1:which(colnames(data) == "nword")]
-  }
-  if(create == FALSE){
-    data$disgust = rep(0, nrow(data))
-    data$omg = rep(0, nrow(data))
-    data$wtf = rep(0, nrow(data))
-    data$hate = rep(0, nrow(data))
-    data$zero = rep(0, nrow(data))
+    if(test == TRUE){
+      for(i in (which(colnames(origin) == "nword")+1):length(origin)){
+        data$new_col = rep(0, nrow(data))
+        colnames(data)[ncol(data)] = colnames(origin)[i]
+      }
+    }
   }
   
-  data$exclam = rep(0, nrow(data))
-  data$question = rep(0, nrow(data))
-  data$fivestar = rep(0, nrow(data))
+  data$exclam_mark = rep(0, nrow(data))
+  data$question_mark = rep(0, nrow(data))
   data$dots_count = rep(0, nrow(data))
-  data$capital = rep(0, nrow(data))
+  data$capital_letter = rep(0, nrow(data))
   for(i in 1:nrow(data)){
-    if(i%1000 == 0){
+    if(i%%1000 == 0){
       print(i)
-    }
-    text = data$TEXT[i]
-    #---------------------------
-    if(create == TRUE){
-      if(i < 1000){
-        words = str_extract_all(tolower(text), "[a-z]+")
-        for(j in 1:length(words[[1]])){
-          words[[1]][j]
-          if(!(words[[1]][j] %in% colnames(data))){
-            data$new_col = rep(0, nrow(data))
-            data$new_col[i] = 1
-            colnames(data)[ncol(data)] = words[[1]][j]
-          }else{
-            data[i, which(colnames(data) == words[[1]][j])]
-            data[i, which(colnames(data) == words[[1]][j])] = data[i, which(colnames(data) == words[[1]][j])] + 1
-          }
-        }
-      }
-      if(i == 1000){
+      if(test == FALSE){
         delete_index = c()
-        for(j in which(colnames(data) == "nword"):length(data)){
-          if(sum(data[j]) < 5)
+        for(j in (which(colnames(data) == "nword")+1):length(data)){
+          if(sum(data[j]) < 0.005*i)
             delete_index = c(delete_index, j)
         }
         data = data[-delete_index]
         print(length(data))
       }
-      if(i >= 1000){
-        lower_text = tolower(text)
-        for(j in which(colnames(data) == "nword"):length(data)){
-          data[i, j] = str_count(lower_text, pattern = colnames(data[j]))
-        }
-      }
-    }else{
-      data$disgust[i] = str_count(tolower(text), pattern = "disgust")
-      data$omg[i] = str_count(text, pattern = "OMG")
-      data$wtf[i] = str_count(tolower(text), pattern = "wtf")
-      data$hate[i] = str_count(tolower(text), pattern = "hate")
-      data$zero[i] = str_count(tolower(text), pattern = "zero")
     }
     
-    #count punctuations
+    text = data$TEXT[i]
+    #---------------------------
+    if(create == TRUE && test == FALSE){
+      words = str_extract_all(tolower(text), "[a-z]+")
+      for(j in 1:length(words[[1]])){
+        if(!(words[[1]][j] %in% colnames(data))){
+          data$new_col = rep(0, nrow(data))
+          data$new_col[i] = 1
+          colnames(data)[ncol(data)] = words[[1]][j]
+        }else{
+          data[i, which(colnames(data) == words[[1]][j])] = data[i, which(colnames(data) == words[[1]][j])] + 1
+        }
+      }
+    }
+    if(create == TRUE && test == TRUE){
+      words = str_extract_all(tolower(text), "[a-z]+")
+      for(j in 1:length(words[[1]])){
+        if(words[[1]][j] %in% colnames(origin)){
+          if(!(words[[1]][j] %in% colnames(data))){
+            data$new_col = rep(0, nrow(data))
+            data$new_col[i] = 1
+            colnames(data)[ncol(data)] = words[[1]][j]
+          }else{
+            data[i, which(colnames(data) == words[[1]][j])] = data[i, which(colnames(data) == words[[1]][j])] + 1
+          }
+        }
+      }
+    }
+    
+    #count punctuations=
     data$exclam[i] = str_count(text, pattern = "!")
-    data$question[i] = str_count(text, pattern = "\\?")
-    data$fivestar[i] = str_count(text, pattern = "5 star")
+    data$question_mark[i] = str_count(text, pattern = "\\?")
     data$dots_count[i] = str_count(text, pattern = "\\.")
-    data$capital[i] = str_count(text, pattern = "[ABCDEFGHIJKLMNOPQRSTUVWXYZ]")
+    data$capital_letter[i] = str_count(text, pattern = "[ABCDEFGHIJKLMNOPQRSTUVWXYZ]")
   }
   
-  trim = ((which(colnames(data) == "nword"))+1):length(data)
-  #find the most influencial predictors
-  predictor_data = origin[trim]
-  l<-rep(0, length(predictor_data)) #cor of each predictor with star
-  for (i in 1:length(predictor_data)){
-    l[i] = cor(origin$star, predictor_data[,i])
+  if(test == FALSE){
+    delete_index = c()
+    for(j in (which(colnames(data) == "nword")+1):length(data)){
+      if(sum(data[j]) < 0.005*length(data))
+        delete_index = c(delete_index, j)
+    }
+    data = data[-delete_index]
+    print(length(data))
   }
-  most = names(predictor_data[order(l) < 51])
-  least = names(predictor_data[order(l) > (length(l) - 51)])
+  
+  
+  #find the most influencial predictors
+  if(test == TRUE){
+    trim = ((which(colnames(data) == "nword"))+1):length(data)
+  }else{
+    trim = ((which(colnames(data) == "nword"))+1):length(data)
+  }
+  
+  if(test == TRUE){
+    l<-rep(-100, length(origin)) #cor of each predictor with star
+    for (i in ((which(colnames(origin) == "dots_count"))+1):length(origin)){
+      l[i] = cor(origin$STAR, origin[,i])
+    }
+  }else{
+    l<-rep(-100, length(data)) #cor of each predictor with star
+    for (i in ((which(colnames(data) == "dots_count"))+1):length(data)){
+      l[i] = cor(data$STAR, data[,i])
+    }
+  }
+  l = l[l!=-100]
+
   #calculate the number of extreme words
+  most = names(data[which(rank(l) > length(data)- 100) + (which(colnames(data) == "dots_count"))])
+  least = names(data[which(rank(l) <101) + (which(colnames(data) == "dots_count"))])
+ 
   most_sum = apply(data[,most], MARGIN = 1, FUN = sum)
   least_sum = apply(data[,least], MARGIN = 1, FUN = sum)
-  
-  not_important = names(predictor_data[order(l) < length(l)-100 & order(l) > 100])
   #-----------------------
   
   data$portion = (most_sum+1) / (least_sum+1)
   
-  
-  #eliminate unimportant variables
-  if(eliminate == TRUE){
-    data = data[!(colnames(data) %in% not_important)]
-  }
-  
+  data$portion
   #transform all count of words to portion of text
   if(portion == TRUE){
     data[trim] = data[trim] / data$nword
@@ -130,21 +147,21 @@ data_transform = function(data = chart, test = FALSE, eliminate = FALSE, portion
   return(data)
 }
 
-transformed_data = data_transform(chart, eliminate = FALSE, portion = TRUE)
-trim = (which(colnames(transformed_data) == "nchar")):length(transformed_data)
-#head(transformed_data)
-transformed_data[,(length(transformed_data) - 50):length(transformed_data)]
-chart = transformed_data
+write.csv(data, "train_1504.csv", row.names = FALSE)
+which(colnames(data) == "new_col")
+chart = data_transform(chart, portion = TRUE)
+trim = (which(colnames(chart) == "nchar")):length(chart)
+head(chart)
 ```
 
 
 ```{r}
-model1 = lm(star ~ . , data = chart[c(2,trim)])
+model1 = lm(STAR ~ . , data = chart[c(2,trim)])
 #summary(model1)$coefficients[-1,4]
 yhat = predict(model1)
 yhat[yhat > 5] = 5
 yhat[yhat < 1] = 1
-resid = chart$star - yhat
+resid = chart$STAR - yhat
 SSE = sum(resid^2)
 SSE
 summary(model1)$p_value
@@ -196,8 +213,9 @@ SSENew
 
 ```{r}
 test_data = read_csv("test_Madison.csv")
-head(test_data)
-test_data = data_transform(test_data, eliminate = FALSE, portion = TRUE, test = TRUE, origin = chart)
+test_transformed = data_transform(test_data[1:100,], portion = TRUE, test = TRUE, origin = transformed_data)
+write.csv(test_transformed, "test_1917_predictor.csv", row.names = FALSE)
+test_data = test_transformed
 trim = (which(colnames(test_data) == "nchar")):length(test_data)
 ```
 
