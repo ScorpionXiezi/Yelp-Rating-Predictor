@@ -48,16 +48,15 @@ data_transform = function(data = chart, test = FALSE, eliminate = FALSE, portion
   data$dots_count = rep(0, nrow(data))
   data$capital = rep(0, nrow(data))
   for(i in 1:nrow(data)){
-    if(i%%1000 == 0){
+    if(i%%200 == 0){
       print(i)
     }
     text = data$TEXT[i]
     #---------------------------
-    if(create == TRUE){
-      if(i < 1000){
+    if(create == TRUE && test = FALSE){
+      if(i <= 1000){
         words = str_extract_all(tolower(text), "[a-z]+")
         for(j in 1:length(words[[1]])){
-          words[[1]][j]
           if(!(words[[1]][j] %in% colnames(data))){
             data$new_col = rep(0, nrow(data))
             data$new_col[i] = 1
@@ -77,13 +76,23 @@ data_transform = function(data = chart, test = FALSE, eliminate = FALSE, portion
         data = data[-delete_index]
         print(length(data))
       }
-      if(i >= 1000){
+      if(i > 1000){
         lower_text = tolower(text)
         for(j in which(colnames(data) == "nword"):length(data)){
           data[i, j] = str_count(lower_text, pattern = colnames(data[j]))
         }
       }
-    }else{
+    }
+    if(create == TRUE && test == TRUE){
+      words = str_extract_all(tolower(text), "[a-z]+")
+      for(j in 1:length(words[[1]])){
+        if(words[[1]][j] %in% colnames(origin)){
+          data[i, which(colnames(data) == words[[1]][j])]
+          data[i, which(colnames(data) == words[[1]][j])] = data[i, which(colnames(data) == words[[1]][j])] + 1
+        }
+      }
+    }
+    if(create == FALSE){
       data$disgust[i] = str_count(tolower(text), pattern = "disgust")
       data$omg[i] = str_count(text, pattern = "OMG")
       data$wtf[i] = str_count(tolower(text), pattern = "wtf")
@@ -146,7 +155,8 @@ transformed_data = data_transform(chart[1:1000,], eliminate = FALSE, portion = T
 trim = (which(colnames(transformed_data) == "nchar")):length(transformed_data)
 #head(transformed_data)
 transformed_data[,(length(transformed_data) - 50):length(transformed_data)]
-chart = transformed_data
+#chart = transformed_data
+transformed_data$portion
 ```
 
 
@@ -210,6 +220,7 @@ SSENew
 test_data = read_csv("test_Madison.csv")
 head(test_data)
 test_data = data_transform(test_data, eliminate = FALSE, portion = TRUE, test = TRUE, origin = chart)
+write.csv("test_1917_predictor.csv")
 trim = (which(colnames(test_data) == "nchar")):length(test_data)
 ```
 
