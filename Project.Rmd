@@ -24,7 +24,11 @@ chart = origin_data
 
 #pos_new = scan("new_words.txt", what = character())
 
-data_transform = function(data = chart, test = FALSE, eliminate = FALSE, portion = TRUE, create = TRUE, origin = chart) {
+data_transform = function(data = chart, test = FALSE, portion = TRUE, create = TRUE, origin = chart) {
+  #data = chart
+  #test = FALSE
+  #portion = TRUE
+  #create = TRUE
   data = data[colnames(data) != "chicago" & colnames(data) != "wisconsin"]
   colnames(data)[colnames(data) == "name"] = "NAME"
   colnames(data)[colnames(data) == "city"] = "CITY"
@@ -45,8 +49,6 @@ data_transform = function(data = chart, test = FALSE, eliminate = FALSE, portion
     data$zero = rep(0, nrow(data))
   }
   
-  data$omg = rep(0, nrow(data))
-  data$wtf = rep(0, nrow(data))
   data$exclam = rep(0, nrow(data))
   data$question = rep(0, nrow(data))
   data$fivestar = rep(0, nrow(data))
@@ -101,9 +103,7 @@ data_transform = function(data = chart, test = FALSE, eliminate = FALSE, portion
       data$zero[i] = str_count(tolower(text), pattern = "zero")
     }
     
-    #count punctuations
-    data$omg[i] = str_count(text, pattern = "OMG")
-    data$wtf[i] = str_count(tolower(text), pattern = "wtf")
+    #count punctuations=
     data$exclam[i] = str_count(text, pattern = "!")
     data$question[i] = str_count(text, pattern = "\\?")
     data$fivestar[i] = str_count(text, pattern = "5 star")
@@ -142,11 +142,6 @@ data_transform = function(data = chart, test = FALSE, eliminate = FALSE, portion
   data$portion = (most_sum+1) / (least_sum+1)
   
   
-  #eliminate unimportant variables
-  if(eliminate == TRUE){
-    data = data[!(colnames(data) %in% not_important)]
-  }
-  
   #transform all count of words to portion of text
   if(portion == TRUE){
     data[trim] = data[trim] / data$nword
@@ -154,7 +149,7 @@ data_transform = function(data = chart, test = FALSE, eliminate = FALSE, portion
   return(data)
 }
 
-transformed_data = data_transform(chart, eliminate = FALSE, portion = TRUE)
+transformed_data = data_transform(chart, portion = TRUE)
 trim = (which(colnames(transformed_data) == "nchar")):length(transformed_data)
 #head(transformed_data)
 transformed_data[,(length(transformed_data) - 50):length(transformed_data)]
@@ -221,7 +216,7 @@ SSENew
 
 ```{r}
 test_data = read_csv("test_Madison.csv")
-test_transformed = data_transform(test_data[1:100,], eliminate = FALSE, portion = TRUE, test = TRUE, origin = transformed_data)
+test_transformed = data_transform(test_data[1:100,], portion = TRUE, test = TRUE, origin = transformed_data)
 write.csv(test_transformed, "test_1917_predictor.csv", row.names = FALSE)
 test_data = test_transformed
 trim = (which(colnames(test_data) == "nchar")):length(test_data)
