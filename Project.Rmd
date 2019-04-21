@@ -146,7 +146,7 @@ yhat[yhat > 5] = 5
 yhat[yhat < 1] = 1
 resid = chart$star - yhat
 SSE = sum(resid^2)
-SSE
+SSE 
 summary(model1)$p_value
 plot(chart$Id, resid, xlab = "ID", ylab = "Residuals", main = "Residual Plot",pch = 23,bg = "red",cex = 1.2)
 abline(a = 0, b = 0, col = "black", lwd = 3)
