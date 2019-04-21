@@ -21,6 +21,76 @@ origin_data = chart
 
 ```{r}
 chart = origin_data
+l<-rep(0, 500) #cor of each predictor with star
+predictor_data = chart[,9:508]
+for (i in 1:500){
+  l[i] = cor(chart$star, predictor_data[,i])
+}
+
+most = names(predictor_data[order(l[1:500]) < 51])
+least = names(predictor_data[order(l[1:500]) > 451])
+not_important = names(predictor_data[order(l[1:500]) < 400 & order(l[1:500]) > 100])
+
+data_transform = function(data, test = FALSE, eliminate = TRUE, portion = TRUE) {
+  #find the most positive and negative words
+  
+  data = data[colnames(data) != "chicago" & colnames(data) != "wisconsin"]
+  #eliminate unimportant variables
+  if(eliminate == TRUE){
+    data = data[!(colnames(data) %in% not_important)]
+  }
+  
+  #calculate the number of extreme words
+  most_sum = apply(data[,most], MARGIN = 1, FUN = sum)
+  #data$most_sum = most_sum
+  least_sum = apply(data[,least], MARGIN = 1, FUN = sum)
+  #data$least_sum = least_sum
+  
+  data$exclam = rep(0, nrow(data))
+  data$question = rep(0, nrow(data))
+  data$fivestar = rep(0, nrow(data))
+  data$disgust = rep(0, nrow(data))
+  data$omg = rep(0, nrow(data))
+  data$wtf = rep(0, nrow(data))
+  data$hate = rep(0, nrow(data))
+  data$zero = rep(0, nrow(data))
+  
+  trim = ((which(colnames(data) == "nword"))+1):length(data)
+  
+  if(portion == TRUE){
+    data[trim] = data[trim] / data$nword
+  }
+  data$portion = (most_sum+1) / (least_sum+1)
+  
+  for(i in 1:nrow(data)){
+    text = data$text[i]
+    data$exclam[i] = str_count(text, pattern = "!")
+    data$question[i] = str_count(text, pattern = "\\?")
+    data$fivestar[i] = str_count(text, pattern = "5 star")
+    data$disgust[i] = str_count(text, pattern = "disgust")
+    data$omg[i] = str_count(text, pattern = "OMG")
+    data$wtf[i] = sum(str_count(text, pattern = c("wtf","WTF")))
+    data$hate[i] = str_count(text, pattern = "hate")
+    data$zero[i] = sum(str_count(text, pattern = c("zero","ZERO")))
+  }
+  return(data)
+}
+
+transformed_data = data_transform(chart, eliminate = FALSE, portion = TRUE)
+trim = (which(colnames(transformed_data) == "nchar")):length(transformed_data)
+#head(transformed_data)
+#transformed_data[,507:509]
+chart = transformed_data
+```
+
+
+
+
+
+
+
+```{r}
+chart = origin_data
 
 #pos_new = scan("new_words.txt", what = character())
 
@@ -140,6 +210,26 @@ chart = transformed_data
 
 ```{r}
 model1 = lm(star ~ . , data = chart[c(2,trim)])
+ 
+inter_index = c()
+inter_value = c()
+for(i in ((which(colnames(chart) == "nword"))+1):length(chart)){
+  if(i%%20 == 0)
+    print(i)
+  for(j in (i+1):length(chart)){
+    inter = cbind(chart[2], chart[,i], chart[,j])
+    model_inter = lm(star ~ .^2, data = inter)
+    if(nrow(summary(model_inter)$coefficients) == 4){
+      if(summary(model_inter)$coefficients[4,4] < 0.00001){
+        inter_index = cbind(inter_index, c(i, j))
+        inter_value = c(inter_value, summary(model_inter)$coefficients[4,4])
+      }
+    }
+  }
+}
+
+inter_index
+
 #summary(model1)$coefficients[-1,4]
 yhat = predict(model1)
 yhat[yhat > 5] = 5
