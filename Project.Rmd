@@ -137,6 +137,7 @@ data_transform = function(data = chart, test = FALSE, portion = TRUE, create = T
   return(data)
 }
 
+
 add_predictor = function(data = chart, new_pred, col_name, portion = TRUE){
   if(col_name %in% colnames(chart)){
     return(data)
@@ -177,7 +178,7 @@ for(i in ((which(colnames(test_predictor) == "nword"))+1):length(test_predictor)
   }
 }
 
-chart = test_predictor
+chart = read_csv("train_1505_added.csv")
 
 
 sum(test_predictor[,"minus"])
