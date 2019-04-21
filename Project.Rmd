@@ -155,13 +155,49 @@ add_predictor = function(data = chart, new_pred, col_name){
   return(data)
 }
 
+test_predictor = chart
 test_predictor = add_predictor(data = test_predictor, "omg", "omg")
 test_predictor = add_predictor(data = test_predictor, ":\\)", ":)")
 test_predictor = add_predictor(data = test_predictor, ";\\)", ";)")
-test_predictor 
+test_predictor = add_predictor(data = test_predictor, "wtf", "wtf")
+test_predictor = add_predictor(data = test_predictor, "fuck", "fuck")
+test_predictor = add_predictor(data = test_predictor, "shit", "shit")
+test_predictor = add_predictor(data = test_predictor, "five", "five")
+test_predictor = add_predictor(data = test_predictor, "\\$", "$")
+test_predictor = add_predictor(data = test_predictor, "1", "1")
+test_predictor = add_predictor(data = test_predictor, "2", "2")
+test_predictor = add_predictor(data = test_predictor, "3", "3")
+test_predictor = add_predictor(data = test_predictor, "4", "4")
+test_predictor = add_predictor(data = test_predictor, "5", "5")
+test_predictor = add_predictor(data = test_predictor, "limited", "limited")
+test_predictor = add_predictor(data = test_predictor, "plus", "plus")
+test_predictor = add_predictor(data = test_predictor, "minus", "minus")
+
+for(i in ((which(colnames(test_predictor) == "nword"))+1):length(test_predictor)){
+  if(sum(test_predictor[i])<50){
+    print(colnames(test_predictor)[i])
+  }
+}
+
+
+sum(test_predictor[,"minus"])
+sum(test_predictor[,"plus"])
+sum(test_predictor[,"limited"])
+sum(test_predictor[,"5"])
+sum(test_predictor[,"4"])
+sum(test_predictor[,"3"])
+sum(test_predictor[,"2"])
+sum(test_predictor[,"1"])
+sum(test_predictor[,"$"])
+sum(test_predictor[,"four"])
+sum(test_predictor[,"five"])
 sum(test_predictor[,":)"])
 sum(test_predictor[,";)"])
 sum(test_predictor[,"omg"])
+sum(test_predictor[,"wtf"])
+sum(test_predictor[,"fuck"])
+sum(test_predictor[,"shit"])
+
 head(test_predictor[(length(test_predictor)-40):length(test_predictor)])
 
 chart = data_transform(chart, portion = TRUE)
