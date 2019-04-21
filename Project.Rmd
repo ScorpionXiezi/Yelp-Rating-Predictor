@@ -48,7 +48,7 @@ data_transform = function(data = chart, test = FALSE, eliminate = FALSE, portion
   data$dots_count = rep(0, nrow(data))
   data$capital = rep(0, nrow(data))
   for(i in 1:nrow(data)){
-    if(i%1000 == 0){
+    if(i%%1000 == 0){
       print(i)
     }
     text = data$TEXT[i]
@@ -99,9 +99,16 @@ data_transform = function(data = chart, test = FALSE, eliminate = FALSE, portion
     data$capital[i] = str_count(text, pattern = "[ABCDEFGHIJKLMNOPQRSTUVWXYZ]")
   }
   
-  trim = ((which(colnames(data) == "nword"))+1):length(data)
+  
   #find the most influencial predictors
-  predictor_data = origin[trim]
+  if(test == TRUE){
+    trim = ((which(colnames(origin) == "nword"))+1):length(origin)
+    predictor_data = origin[trim]
+  }
+  else{
+    trim = ((which(colnames(data) == "nword"))+1):length(data)
+    predictor_data = data[trim]
+  }
   l<-rep(0, length(predictor_data)) #cor of each predictor with star
   for (i in 1:length(predictor_data)){
     l[i] = cor(origin$star, predictor_data[,i])
@@ -130,7 +137,7 @@ data_transform = function(data = chart, test = FALSE, eliminate = FALSE, portion
   return(data)
 }
 
-transformed_data = data_transform(chart, eliminate = FALSE, portion = TRUE)
+transformed_data = data_transform(chart[1:1000,], eliminate = FALSE, portion = TRUE)
 trim = (which(colnames(transformed_data) == "nchar")):length(transformed_data)
 #head(transformed_data)
 transformed_data[,(length(transformed_data) - 50):length(transformed_data)]
