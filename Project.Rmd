@@ -143,8 +143,27 @@ data_transform = function(data = chart, test = FALSE, portion = TRUE, create = T
   return(data)
 }
 
-write.csv(data, "train_1504.csv", row.names = FALSE)
-which(colnames(data) == "new_col")
+add_predictor = function(data = chart, new_pred, col_name){
+  if(col_name %in% colnames(chart)){
+    return(data)
+  }
+  data$new_col = rep(0, nrow(data))
+  colnames(data)[ncol(data)] = col_name
+  for(i in 1:nrow(data)){
+    data[i, ncol(data)] = str_count(tolower(data$text[i]), new_pred)
+  }
+  return(data)
+}
+
+test_predictor = add_predictor(data = test_predictor, "omg", "omg")
+test_predictor = add_predictor(data = test_predictor, ":\\)", ":)")
+test_predictor = add_predictor(data = test_predictor, ";\\)", ";)")
+test_predictor 
+sum(test_predictor[,":)"])
+sum(test_predictor[,";)"])
+sum(test_predictor[,"omg"])
+head(test_predictor[(length(test_predictor)-40):length(test_predictor)])
+
 chart = data_transform(chart, portion = TRUE)
 trim = (which(colnames(chart) == "nchar")):length(chart)
 head(chart)
