@@ -53,7 +53,7 @@ data_transform = function(data = chart, test = FALSE, eliminate = FALSE, portion
     }
     text = data$TEXT[i]
     #---------------------------
-    if(create == TRUE && test = FALSE){
+    if(create == TRUE && test == FALSE){
       if(i <= 1000){
         words = str_extract_all(tolower(text), "[a-z]+")
         for(j in 1:length(words[[1]])){
@@ -62,7 +62,6 @@ data_transform = function(data = chart, test = FALSE, eliminate = FALSE, portion
             data$new_col[i] = 1
             colnames(data)[ncol(data)] = words[[1]][j]
           }else{
-            data[i, which(colnames(data) == words[[1]][j])]
             data[i, which(colnames(data) == words[[1]][j])] = data[i, which(colnames(data) == words[[1]][j])] + 1
           }
         }
@@ -87,8 +86,13 @@ data_transform = function(data = chart, test = FALSE, eliminate = FALSE, portion
       words = str_extract_all(tolower(text), "[a-z]+")
       for(j in 1:length(words[[1]])){
         if(words[[1]][j] %in% colnames(origin)){
-          data[i, which(colnames(data) == words[[1]][j])]
-          data[i, which(colnames(data) == words[[1]][j])] = data[i, which(colnames(data) == words[[1]][j])] + 1
+          if(!(words[[1]][j] %in% colnames(data))){
+            data$new_col = rep(0, nrow(data))
+            data$new_col[i] = 1
+            colnames(data)[ncol(data)] = words[[1]][j]
+          }else{
+            data[i, which(colnames(data) == words[[1]][j])] = data[i, which(colnames(data) == words[[1]][j])] + 1
+          }
         }
       }
     }
@@ -219,7 +223,7 @@ SSENew
 ```{r}
 test_data = read_csv("test_Madison.csv")
 head(test_data)
-test_data = data_transform(test_data, eliminate = FALSE, portion = TRUE, test = TRUE, origin = chart)
+test_data = data_transform(test_data, eliminate = FALSE, portion = TRUE, test = TRUE, origin = transformed_data)
 write.csv("test_1917_predictor.csv")
 trim = (which(colnames(test_data) == "nchar")):length(test_data)
 ```
