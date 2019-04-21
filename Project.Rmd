@@ -111,7 +111,12 @@ data_transform = function(data = chart, test = FALSE, eliminate = FALSE, portion
   }
   l<-rep(0, length(predictor_data)) #cor of each predictor with star
   for (i in 1:length(predictor_data)){
-    l[i] = cor(origin$star, predictor_data[,i])
+    if(test == TRUE){
+      l[i] = cor(origin$star, predictor_data[,i])
+    }
+    else{
+      l[i] = cor(data$star, predictor_data[,i])
+    }
   }
   most = names(predictor_data[order(l) < 51])
   least = names(predictor_data[order(l) > (length(l) - 51)])
