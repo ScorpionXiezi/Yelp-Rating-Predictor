@@ -75,19 +75,13 @@ data_transform = function(data = chart, test = FALSE, portion = TRUE, create = T
     if(create == TRUE && test == TRUE){
       words = str_extract_all(tolower(text), "[a-z]+")
       for(j in 1:length(words[[1]])){
-        if(words[[1]][j] %in% colnames(origin)){
-          if(!(words[[1]][j] %in% colnames(data))){
-            data$new_col = rep(0, nrow(data))
-            data$new_col[i] = 1
-            colnames(data)[ncol(data)] = words[[1]][j]
-          }else{
-            data[i, which(colnames(data) == words[[1]][j])] = data[i, which(colnames(data) == words[[1]][j])] + 1
-          }
+        if(words[[1]][j] %in% colnames(data)){
+          data[i, which(colnames(data) == words[[1]][j])] = data[i, which(colnames(data) == words[[1]][j])] + 1
         }
       }
     }
     
-    #count punctuations=
+    #count punctuations
     data$exclam_mark[i] = str_count(text, pattern = "!")
     data$question_mark[i] = str_count(text, pattern = "\\?")
     data$dots_count[i] = str_count(text, pattern = "\\.")
@@ -143,54 +137,56 @@ data_transform = function(data = chart, test = FALSE, portion = TRUE, create = T
   return(data)
 }
 
-add_predictor = function(data = chart, new_pred, col_name){
+add_predictor = function(data = chart, new_pred, col_name, portion = TRUE){
   if(col_name %in% colnames(chart)){
     return(data)
   }
   data$new_col = rep(0, nrow(data))
   colnames(data)[ncol(data)] = col_name
   for(i in 1:nrow(data)){
-    data[i, ncol(data)] = str_count(tolower(data$text[i]), new_pred)
+    data[i, ncol(data)] = str_count(tolower(data$TEXT[i]), new_pred)
+    if(portion == TRUE){
+      data[i, ncol(data)] = data[i, ncol(data)] / data$nword[i]
+    }
   }
   return(data)
 }
 
+
 test_predictor = chart
 test_predictor = add_predictor(data = test_predictor, "omg", "omg")
-test_predictor = add_predictor(data = test_predictor, ":\\)", ":)")
-test_predictor = add_predictor(data = test_predictor, ";\\)", ";)")
+test_predictor = add_predictor(data = test_predictor, ":\\)", "smile_face")
+test_predictor = add_predictor(data = test_predictor, ";\\)", "wink_face")
 test_predictor = add_predictor(data = test_predictor, "wtf", "wtf")
 test_predictor = add_predictor(data = test_predictor, "fuck", "fuck")
 test_predictor = add_predictor(data = test_predictor, "shit", "shit")
-test_predictor = add_predictor(data = test_predictor, "five", "five")
-test_predictor = add_predictor(data = test_predictor, "\\$", "$")
+test_predictor = add_predictor(data = test_predictor, "\\$", "dollar_sign")
 test_predictor = add_predictor(data = test_predictor, "1", "1")
 test_predictor = add_predictor(data = test_predictor, "2", "2")
 test_predictor = add_predictor(data = test_predictor, "3", "3")
 test_predictor = add_predictor(data = test_predictor, "4", "4")
 test_predictor = add_predictor(data = test_predictor, "5", "5")
-test_predictor = add_predictor(data = test_predictor, "limited", "limited")
-test_predictor = add_predictor(data = test_predictor, "plus", "plus")
 test_predictor = add_predictor(data = test_predictor, "minus", "minus")
+test_predictor = add_predictor(data = test_predictor, "\\+", "add_mark")
+test_predictor = add_predictor(data = test_predictor, "\\-", "minus_mark")
+write.csv(test_predictor, "train_1505_added.csv", row.names = FALSE)
 
 for(i in ((which(colnames(test_predictor) == "nword"))+1):length(test_predictor)){
-  if(sum(test_predictor[i])<50){
+  if(sum(test_predictor[i] * data$nword[i])<50){
     print(colnames(test_predictor)[i])
   }
 }
 
+chart = test_predictor
+
 
 sum(test_predictor[,"minus"])
-sum(test_predictor[,"plus"])
-sum(test_predictor[,"limited"])
 sum(test_predictor[,"5"])
 sum(test_predictor[,"4"])
 sum(test_predictor[,"3"])
 sum(test_predictor[,"2"])
 sum(test_predictor[,"1"])
 sum(test_predictor[,"$"])
-sum(test_predictor[,"four"])
-sum(test_predictor[,"five"])
 sum(test_predictor[,":)"])
 sum(test_predictor[,";)"])
 sum(test_predictor[,"omg"])
@@ -235,16 +231,17 @@ interSum = 0
 count = 0
 
 for (i in 1:100){
-  list = sample(x = 1:nrow(chart), size = 10000)
+  print(i)
+  list = sample(x = 1:nrow(chart), size = 5000)
   model.random = lm(STAR ~ ., data = chart[list, c(2, trim)])
   if(length(summary(model.random)$coefficients[-1,1]) == length(trim)){
     coefSum = coefSum + summary(model.random)$coefficients[-1,1]
     interSum = interSum + summary(model.random)$coefficients[1,1]
     count = count + 1
   }
-  else{
-    tail(summary(model.random))
-  }
+  #else{
+    #tail(summary(model.random))
+  #}
 }
 fitRaw = data.matrix(chart[trim]) %*% data.matrix(coefSum/count)
 fitRaw = fitRaw + interSum/count
