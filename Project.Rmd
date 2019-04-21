@@ -25,10 +25,6 @@ chart = read_csv("train_Madison.csv")
 #pos_new = scan("new_words.txt", what = character())
 
 data_transform = function(data = chart, test = FALSE, portion = TRUE, create = TRUE, origin = chart) {
-  data = chart
-  test = FALSE
-  portion = TRUE
-  create = TRUE
   data = data[colnames(data) != "chicago" & colnames(data) != "wisconsin"]
   colnames(data)[colnames(data) == "name"] = "NAME"
   colnames(data)[colnames(data) == "city"] = "CITY"
@@ -92,7 +88,7 @@ data_transform = function(data = chart, test = FALSE, portion = TRUE, create = T
     }
     
     #count punctuations=
-    data$exclam[i] = str_count(text, pattern = "!")
+    data$exclam_mark[i] = str_count(text, pattern = "!")
     data$question_mark[i] = str_count(text, pattern = "\\?")
     data$dots_count[i] = str_count(text, pattern = "\\.")
     data$capital_letter[i] = str_count(text, pattern = "[ABCDEFGHIJKLMNOPQRSTUVWXYZ]")
@@ -137,9 +133,9 @@ data_transform = function(data = chart, test = FALSE, portion = TRUE, create = T
   least_sum = apply(data[,least], MARGIN = 1, FUN = sum)
   #-----------------------
   
-  data$portion = (most_sum+1) / (least_sum+1)
+  data$PORTION = (most_sum+1) / (least_sum+1)
   
-  data$portion
+  data$PORTION
   #transform all count of words to portion of text
   if(portion == TRUE){
     data[trim] = data[trim] / data$nword
@@ -185,7 +181,7 @@ count = 0
 
 for (i in 1:100){
   list = sample(x = 1:nrow(chart), size = 10000)
-  model.random = lm(star ~ ., data = chart[list, c(2, trim)])
+  model.random = lm(STAR ~ ., data = chart[list, c(2, trim)])
   if(length(summary(model.random)$coefficients[-1,1]) == length(trim)){
     coefSum = coefSum + summary(model.random)$coefficients[-1,1]
     interSum = interSum + summary(model.random)$coefficients[1,1]
@@ -202,24 +198,27 @@ fitRaw[fitRaw < 1] = 1
 residNew = chart$star - fitRaw
 SSENew = sum(residNew^2)
 SSENew
-#model1 = lm(star ~ ., data = rawdata)
-#summary(model1)
-#trim = which(summary(model1)$coefficients[,4] < 1)
-#model2 = lm(star ~ ., data = rawdata[trim])
-#summary(model2)
 
 ```
 
 
 ```{r}
 test_data = read_csv("test_Madison.csv")
-test_transformed = data_transform(test_data[1:100,], portion = TRUE, test = TRUE, origin = transformed_data)
-write.csv(test_transformed, "test_1917_predictor.csv", row.names = FALSE)
-test_data = test_transformed
+test_data = data_transform(test_data, portion = TRUE, test = TRUE, origin = chart)
+
+write.csv(test_transformed, "test_1504_predictor.csv", row.names = FALSE)
 trim = (which(colnames(test_data) == "nchar")):length(test_data)
 ```
 
 ```{r}
+count = 1
+test_data$portion
+coefSum = summary(model1)$coefficients[-1,1]
+coefSum
+interSum = summary(model1)$coefficients[1,1]
+interSum
+test_data[trim]
+
 fit_data = data.matrix(test_data[trim]) %*% data.matrix(coefSum/count)
 fit_data = fit_data + interSum/count
 fit_data[fit_data > 5] = 5
