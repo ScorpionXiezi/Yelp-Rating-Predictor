@@ -1,7 +1,7 @@
 ---
 title: "STAT 333 Project Two"
 Author1: "Xinyi Yu  xyu286@wisc.edu"
-Author2:  "Xiu Xie   @wisc.edu"
+Author2:  "Xiu Xie   xxie65@wisc.edu"
 Authour3: "Yuhan Xie   xie75@wisc.edu"  
 Author4: "Yuwen Zhang  zhang924@wisc.edu"
 date: 04/20/2019
