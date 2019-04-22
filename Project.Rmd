@@ -244,6 +244,17 @@ for (i in 1:100){
     #tail(summary(model.random))
   #}
 }
+
+
+inter_index = cbind(c(59, 35), c(42, 651), c(420, 1344))
+inter_index
+as.formula(paste("STAR ~", paste(colnames(chart)[inter_index[1,]], ":", colnames(chart)[inter_index[2,]], collapse = "+")))
+
+
+colnames(chart)[inter_index[1,]]
+
+?save
+
 fitRaw = data.matrix(chart[trim]) %*% data.matrix(coefSum/count)
 fitRaw = fitRaw + interSum/count
 fitRaw[fitRaw > 5] = 5
@@ -259,26 +270,27 @@ SSENew
 test_data = read_csv("test_Madison.csv")
 test_data = data_transform(test_data, portion = TRUE, test = TRUE, origin = chart)
 
-write.csv(test_transformed, "test_1504_predictor.csv", row.names = FALSE)
-trim = (which(colnames(test_data) == "nchar")):length(test_data)
+head(test_data)
+
+write.csv(test_data, "test_1519.csv", row.names = FALSE)
+test_data$PORTION = test_data$PORTION / test_data$nword
+test_trim = (which(colnames(test_data) == "nchar")):length(test_data)
 ```
 
 ```{r}
-count = 1
-test_data$portion
-coefSum = summary(model1)$coefficients[-1,1]
-coefSum
-interSum = summary(model1)$coefficients[1,1]
-interSum
-test_data[trim]
 
-fit_data = data.matrix(test_data[trim]) %*% data.matrix(coefSum/count)
+count = 1
+coefSum = summary(model1)$coefficients[-1,1]
+interSum = summary(model1)$coefficients[1,1]
+
+fit_data = data.matrix(test_data[test_trim]) %*% data.matrix(coefSum/count)
 fit_data = fit_data + interSum/count
 fit_data[fit_data > 5] = 5
 fit_data[fit_data < 1] = 1
 result = as.data.frame(test_data[,1])
 colnames(result)[1] = "Id"
 result$Expected = fit_data
+fit_data[fit_data>4.5] = 5
 result
 write.csv(result, "test_result.csv", row.names = FALSE)
 ```
