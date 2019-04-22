@@ -228,33 +228,54 @@ for(i in ((which(colnames(chart) == "nword")) +1):length(chart)){
     }
   }
 }
+```
 
-inter_index
-inter_value[1]
-sort(inter_value)
-which(inter_value == 0)
-inter_index[inter_value == 0]
 
-chart[17]
+
+```{r}
+chart = read_csv("train_1505_added.csv")
+
 colnames(chart)[colnames(chart) == 1] = "digit_one"
 colnames(chart)[colnames(chart) == 2] = "digit_two"
 colnames(chart)[colnames(chart) == 3] = "digit_three"
 colnames(chart)[colnames(chart) == 4] = "digit_four"
 colnames(chart)[colnames(chart) == 5] = "digit_five"
-interaction_pickup_index = inter_index[,rank(inter_value) < 100]
-interaction_pickup_index
-chart[16]
+colnames(chart) = toupper(colnames(chart))
 
+interaction_pickup_index = inter_index[,rank(inter_value) < 500]
+inter_index[,rank(inter_value) == 59]
+chart[,1505]
 save(inter_index, file = "inter_index.RData")
 save(inter_value, file = "inter_value.RData")
 ?save
 
-as.formula(paste("STAR ~", paste(colnames(chart)[interaction_pickup_index[1,]], ":", colnames(chart)[interaction_pickup_index[2,]], collapse = " + ", sep = "")))
+?paste0
+str(chart)
+paste("STAR ~.+", paste(colnames(chart)[interaction_pickup_index[1,]],":",colnames(chart)[interaction_pickup_index[2,]], collapse = " + ", sep = ""))
+as.formula(paste("STAR ~.+", paste(colnames(chart)[interaction_pickup_index[1,]],":",colnames(chart)[interaction_pickup_index[2,]], collapse = " + ", sep = "")))
+
 colnames(chart)[interaction_pickup_index[1,]]
 colnames(chart)[interaction_pickup_index[2,]]
 
-?paste
-colnames(chart)[inter_index[1,]]
+model_withInter = lm(as.formula(paste("STAR ~.+", paste(colnames(chart)[interaction_pickup_index[1,]],":",colnames(chart)[interaction_pickup_index[2,]], collapse = " + ", sep = ""))) , data = chart[c(2,trim)])
+
+
+
+
+
+yhat_int = predict(model_withInter)   #Calculate predicted yhat value using the prediction model
+yhat_int[yhat_int > 5] = 5   #Set all predicted values above 5 to 5
+yhat_int[yhat_int < 1] = 1   #Set all predicted values below 1 to 1
+resid_int = chart$STAR - yhat_int   #Calculate the residual values
+SSE_int = sum(resid_int^2)   #Calculate the SSE
+SSE_int
+
+
+
+
+
+
+
 ```
 
 **In this block we run basic MLR to the dataset**
