@@ -20,6 +20,7 @@ output: html_document
 ```{r}
 library(readr)   #load readr
 library(stringr)   #load stringr
+library(quanteda)
 
 rm(list = ls())   #clear all current objects in workspace
 chart = read_csv("train_Madison.csv")   #read train_Madison file into chart
@@ -148,9 +149,12 @@ data_transform = function(data = chart, test = FALSE, portion = TRUE, create = T
   }
   return(data)
 }
+```
 
-#The below method can add new predictors to the dataset. The input values we need are "data", which is set to the chart dataset, "new_pred".which is set to the input pattern of the new predicor, "col_name", which is the name of the predictor, and "portion", which, when set TRUE, calculates the portion of the number of the pattern to number of words
+**The below method can add new predictors to the dataset. The input values we need are "data", which is set to the chart dataset, "new_pred".which is set to the input pattern of the new predicor, "col_name", which is the name of the predictor, and "portion", which, when set TRUE, calculates the portion of the number of the pattern to number of words**
+```{r}
 add_predictor = function(data = chart, new_pred, col_name, portion = TRUE){
+  
   if(!(col_name %in% colnames(chart))){
     data$new_col = rep(0, nrow(data))
     colnames(data)[ncol(data)] = col_name
@@ -167,8 +171,10 @@ add_predictor = function(data = chart, new_pred, col_name, portion = TRUE){
   }
   return(data)
 }
+```
 
 
+```{r}
 test_predictor = chart
 
 #The below lines are predictors that we think are necessary to add to the dataset
@@ -303,8 +309,7 @@ for (i in 1:200){   #We perform bagging 200 times
 
 
 inter_index = cbind(c(59, 35), c(42, 651), c(420, 1344))
-inter_index
-as.formula(paste("STAR ~", paste(colnames(chart)[inter_index[1,]], ":", colnames(chart)[inter_index[2,]], collapse = "+")))
+as.formula(paste("STAR ~", paste(colnames(chart)[inter_index[1,]], ":", colnames(chart)[inter_index[2,]], collapse = " + ", sep = "")))
 
 
 colnames(chart)[inter_index[1,]]
@@ -341,11 +346,8 @@ test_data = data_transform(test_data, portion = TRUE, test = TRUE, origin = char
 
 head(test_data)
 
-test_data = read_csv("test_1519.csv")
-head(test_data[(length(test_data) -40):length(test_data)])
-str_count(tolower(test_data$TEXT[456]), ":\\)")
-    
-    
+test_data = read.csv("test_1519.csv")
+
 test_data = add_predictor(data = test_data, ":\\)", "smile_face")
 test_data = add_predictor(data = test_data, ";\\)", "wink_face")
 test_data = add_predictor(data = test_data, "wtf", "wtf")
@@ -361,6 +363,7 @@ test_data = add_predictor(data = test_data, "minus", "minus")
 test_data = add_predictor(data = test_data, "\\+", "add_mark")
 test_data = add_predictor(data = test_data, "\\-", "minus_mark")
 
+which(colnames(chart) == "if")
 trim = (which(colnames(test_data) == "nchar")):length(test_data)
 write.csv(test_data, "test_1519.csv", row.names = FALSE)
 test_data$PORTION = test_data$PORTION / test_data$nword
@@ -382,7 +385,6 @@ fit_data[fit_data < 1] = 1
 result = as.data.frame(test_data[,1])
 colnames(result)[1] = "Id"
 result$Expected = fit_data
-fit_data[fit_data>4.5] = 5
 result
 write.csv(result, "test_result.csv", row.names = FALSE)
 
@@ -397,7 +399,6 @@ fit_data = data.matrix(test_data[trim_test]) %*% data.matrix(coefSum/count)   ##
 fit_data = fit_data + interSum/count   #Add the average of sum of each model's interceps to fit_data
 fit_data[fit_data > 5] = 5   #Set all predicted values above 5 to 5
 fit_data[fit_data < 1] = 1   #Set all predicted values below 1 to 1
-#fit_data[fit_data > 4.5] = 5
 result = as.data.frame(test_data[,1])   #Store the ID of each value into the dataframe "result"
 colnames(result)[1] = "Id"   #Name the first column of result "Id"
 result$Expected = fit_data   #Set the second column of result as "Expected" and store the fitted value into the dataframe
