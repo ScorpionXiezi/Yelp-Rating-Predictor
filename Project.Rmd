@@ -1,78 +1,95 @@
 ---
 title: "STAT 333 Project Two"
 Author1: "Xinyi Yu  xyu286@wisc.edu"
-Author2:  "Xiu Xie   @wisc.edu"
+Author2:  "Xiu Xie   xxie65@wisc.edu"
 Authour3: "Yuhan Xie   xie75@wisc.edu"  
 Author4: "Yuwen Zhang  zhang924@wisc.edu"
 date: 04/20/2019
 output: html_document
 ---
 
+**Author1:    Xinyi Yu        xyu286@wisc.edu**
+**Author2:    Xiu Xie         xxie65@wisc.edu**
+**Author3:    Yuhan Xie        xie75@wisc.edu**
+**Author4:    Yuwen Zhang   zhang924@wisc.edu**
 
+**We will use R markdown to represent our R code.**
+
+**In this block we will complete initial preperation**
+**Packages we used in our project are readr and stringr.**
 ```{r}
-library(readr)
-library(stringr)
+library(readr)   #load readr
+library(stringr)   #load stringr
 
-rm(list = ls())
-chart = read_csv("train_Madison.csv")
-#origin_data = chart
-#head(chart)
+rm(list = ls())   #clear all current objects in workspace
+chart = read_csv("train_Madison.csv")   #read train_Madison file into chart
 ```
 
+**In this block we will perform data cleaning to the original dataset**
 ```{r}
-#chart = origin_data
+#This is the function where we will recreate all the predictors, the input values we need are "data", which takes in the value in chart, "test", which we initializes to FALSE, "portion", which we initializes to TRUE, "create", which we initializes to TRUE, and "origin", which takes in the value in chart
 
-#pos_new = scan("new_words.txt", what = character())
-
+#Note: 1. if "test" equals TRUE, we are working on the "test_Madison.csv" file
+#      2. if "portion" equals TRUE, we are converting all values to the their ratio of the number of words in each text
+#      3. if "create" equals TRUE, we are recreating all predictors in the original dataset
+#      4. "origin" is used when recreating the "test_Madison.csv" file, this variable is aimed to pair up the predictors in the test file with the train file
 data_transform = function(data = chart, test = FALSE, portion = TRUE, create = TRUE, origin = chart) {
-  data = data[colnames(data) != "chicago" & colnames(data) != "wisconsin"]
-  colnames(data)[colnames(data) == "name"] = "NAME"
-  colnames(data)[colnames(data) == "city"] = "CITY"
-  colnames(data)[colnames(data) == "text"] = "TEXT"
-  colnames(data)[colnames(data) == "star"] = "STAR"
-  if(create == TRUE){
+  
+  #The below four lines are aimed to rename the existing predictors "name", "city", "text", and "star" to avoid confusion when we move to recreating other predictors
+  colnames(data)[colnames(data) == "name"] = "NAME"   #Rename the predictor "name" to "NAME"
+  colnames(data)[colnames(data) == "city"] = "CITY"   #Rename the predictor "city" to "CITY"
+  colnames(data)[colnames(data) == "text"] = "TEXT"   #Rename the predictor "text" to "TEXT"
+  colnames(data)[colnames(data) == "star"] = "STAR"   #Rename the predictor "star" to "STAR"
+ 
+  #The below nested if-statements are aimed to initialize the dataset before recreating predictors
+  if(create == TRUE){   #Keep the original dataset from the first column to the 8th column
     data = data[1:which(colnames(data) == "nword")]
     if(test == TRUE){
       for(i in (which(colnames(origin) == "nword")+1):length(origin)){
-        data$new_col = rep(0, nrow(data))
-        colnames(data)[ncol(data)] = colnames(origin)[i]
+        data$new_col = rep(0, nrow(data))   #Recreate new column and initialize predictors to zeros
+        colnames(data)[ncol(data)] = colnames(origin)[i]   #Recreate the names of all the new predictors in the test file as those in the train file
       }
     }
   }
   
-  data$exclam_mark = rep(0, nrow(data))
-  data$question_mark = rep(0, nrow(data))
-  data$dots_count = rep(0, nrow(data))
-  data$capital_letter = rep(0, nrow(data))
-  for(i in 1:nrow(data)){
-    if(i%%1000 == 0){
-      print(i)
-      if(test == FALSE){
-        delete_index = c()
-        for(j in (which(colnames(data) == "nword")+1):length(data)){
-          if(sum(data[j]) < 0.005*i)
-            delete_index = c(delete_index, j)
+  #The below four lines are aimed to add four new predictors to the dataset
+  data$exclam_mark = rep(0, nrow(data))   #Initialize the column "exclam_mark" to zeros
+  data$question_mark = rep(0, nrow(data))   #Initialize the column "question_mark" to zeros
+  data$dots_count = rep(0, nrow(data))   #Initialize the column "dots_count" to zeros
+  data$capital_letter = rep(0, nrow(data))   ##Initialize the column "capital_letter" to zeros
+  
+  #This nested for-loop is aimed to delete unnecessary predictors and create new predictors
+  for(i in 1:nrow(data)){   
+    if(i%%1000 == 0){   #For each one thousand rows of the dataset
+      print(i)   #Print the number of that row number to keep track of the process
+      if(test == FALSE){   #If not working on the "test_Madison" dataset
+        delete_index = c()   #Initiate detete_index line
+        for(j in (which(colnames(data) == "nword")+1):length(data)){   #For each column after the column "nword"
+          if(sum(data[j]) < 0.005*i)   #If the sum of all the numbers of that predictor word is less than 0.5% of the current row number
+            delete_index = c(delete_index, j)   #Set the delete_index to current column
         }
-        data = data[-delete_index]
-        print(length(data))
+        data = data[-delete_index]   #Delete this column
+        print(length(data))   #Print the number of predictors of keep track of the process
       }
     }
     
-    text = data$TEXT[i]
-    #---------------------------
-    if(create == TRUE && test == FALSE){
-      words = str_extract_all(tolower(text), "[a-z]+")
-      for(j in 1:length(words[[1]])){
-        if(!(words[[1]][j] %in% colnames(data))){
-          data$new_col = rep(0, nrow(data))
-          data$new_col[i] = 1
-          colnames(data)[ncol(data)] = words[[1]][j]
-        }else{
-          data[i, which(colnames(data) == words[[1]][j])] = data[i, which(colnames(data) == words[[1]][j])] + 1
+    text = data$TEXT[i]   #Set the "text" variable to the text review of current row
+    
+    #The below lines are recreating predictors after "nword" and counting the number of word of each text review based on each predictor word
+    if(create == TRUE && test == FALSE){   #While we are recreating the "train_Madison" dataset
+      words = str_extract_all(tolower(text), "[a-z]+")   #Seperate all words in the text variable and store them in the "words" variable
+      for(j in 1:length(words[[1]])){   #For each word in the words variable
+        if(!(words[[1]][j] %in% colnames(data))){   #If that word is not a predictor of the dataset
+          data$new_col = rep(0, nrow(data))   #Initialize a new column in the dataset
+          data$new_col[i] = 1   #Set the current count of that word in the current text to 1
+          colnames(data)[ncol(data)] = words[[1]][j]   #Set the name of that new predictor column to that word
+        }else{   #If the word is already in the dataset as a predictor
+          data[i, which(colnames(data) == words[[1]][j])] = data[i, which(colnames(data) == words[[1]][j])] + 1   #Add 1 to the count of that predictor word
         }
       }
     }
-    if(create == TRUE && test == TRUE){
+    if(create == TRUE && test == TRUE){   #While we are recreating the "test_Madison" dataset
+      #The below lines are counting words in each predictor
       words = str_extract_all(tolower(text), "[a-z]+")
       for(j in 1:length(words[[1]])){
         if(words[[1]][j] %in% colnames(data)){
@@ -81,13 +98,13 @@ data_transform = function(data = chart, test = FALSE, portion = TRUE, create = T
       }
     }
     
-    #count punctuations
-    data$exclam_mark[i] = str_count(text, pattern = "!")
-    data$question_mark[i] = str_count(text, pattern = "\\?")
-    data$dots_count[i] = str_count(text, pattern = "\\.")
-    data$capital_letter[i] = str_count(text, pattern = "[ABCDEFGHIJKLMNOPQRSTUVWXYZ]")
+    data$exclam_mark[i] = str_count(text, pattern = "!")  #Store the numbers of exclamation marks
+    data$question_mark[i] = str_count(text, pattern = "\\?") #Store the numbers of question marks
+    data$dots_count[i] = str_count(text, pattern = "\\.")   #Store the numbers of dots
+    data$capital_letter[i] = str_count(text, pattern = "[ABCDEFGHIJKLMNOPQRSTUVWXYZ]")   #Store the numbers of capital letters
   }
   
+  #The below lines are deleting all unnecessary predictors of the final 1000 rows of data
   if(test == FALSE){
     delete_index = c()
     for(j in (which(colnames(data) == "nword")+1):length(data)){
@@ -99,45 +116,40 @@ data_transform = function(data = chart, test = FALSE, portion = TRUE, create = T
   }
   
   
-  #find the most influencial predictors
-  if(test == TRUE){
-    trim = ((which(colnames(data) == "nword"))+1):length(data)
-  }else{
-    trim = ((which(colnames(data) == "nword"))+1):length(data)
-  }
+  #Set the "trim" variable to a vector from after the "nword" predictor to the end of dataset
+  trim = ((which(colnames(data) == "nword"))+1):length(data)
   
-  if(test == TRUE){
-    l<-rep(-100, length(origin)) #cor of each predictor with star
+  #The below lines calculate the correlations of each predictors versus STAR
+  if(test == TRUE){   #While working on the "test_Madison" file
+    l<-rep(-100, length(origin)) #Initiate the correlation vector l to -100s 
     for (i in ((which(colnames(origin) == "dots_count"))+1):length(origin)){
-      l[i] = cor(origin$STAR, origin[,i])
+      l[i] = cor(origin$STAR, origin[,i])   #Calculate the correlations of each predictors after "dots_count" with STAR
     }
-  }else{
-    l<-rep(-100, length(data)) #cor of each predictor with star
+  }else{   ##While working on the "train_Madison" file
+    l<-rep(-100, length(data)) #Initiate the correlation vector l to -100s 
     for (i in ((which(colnames(data) == "dots_count"))+1):length(data)){
-      l[i] = cor(data$STAR, data[,i])
+      l[i] = cor(data$STAR, data[,i])   #Calculate the correlations of each predictors after "dots_count" with STAR
     }
   }
   l = l[l!=-100]
 
-  #calculate the number of extreme words
-  most = names(data[which(rank(l) > length(data)- 100) + (which(colnames(data) == "dots_count"))])
+  #The below lines calculate the number of extreme words
+  most = names(data[which(rank(l) > length(data)- 100) + (which(colnames(data) == "dots_count"))])   #Find the predictors with highest positive correlation values
   least = names(data[which(rank(l) <101) + (which(colnames(data) == "dots_count"))])
- 
-  most_sum = apply(data[,most], MARGIN = 1, FUN = sum)
-  least_sum = apply(data[,least], MARGIN = 1, FUN = sum)
-  #-----------------------
+  #Find the predictors with highest negative correlation values
+  most_sum = apply(data[,most], MARGIN = 1, FUN = sum)   #Sum up the number of words under the highest positive correlation values
+  least_sum = apply(data[,least], MARGIN = 1, FUN = sum)   #Sum up the number of words under the highest negative correlation values
   
-  data$PORTION = (most_sum+1) / (least_sum+1)
-  
-  data$PORTION
-  #transform all count of words to portion of text
+  data$PORTION = (most_sum+1) / (least_sum+1)   #Set the predictor "PORTION" to the ratio of sums
+
+  #The below lines transform all counts of words to portion of text
   if(portion == TRUE){
     data[trim] = data[trim] / data$nword
   }
   return(data)
 }
 
-
+#The below method can add new predictors to the dataset. The input values we need are "data", which is set to the chart dataset, "new_pred".which is set to the input pattern of the new predicor, "col_name", which is the name of the predictor, and "portion", which, when set TRUE, calculates the portion of the number of the pattern to number of words
 add_predictor = function(data = chart, new_pred, col_name, portion = TRUE){
   if(col_name %in% colnames(chart)){
     return(data)
@@ -155,6 +167,8 @@ add_predictor = function(data = chart, new_pred, col_name, portion = TRUE){
 
 
 test_predictor = chart
+
+#The below lines are predictors that we think are necessary to add to the dataset
 test_predictor = add_predictor(data = test_predictor, "omg", "omg")
 test_predictor = add_predictor(data = test_predictor, ":\\)", "smile_face")
 test_predictor = add_predictor(data = test_predictor, ";\\)", "wink_face")
@@ -172,73 +186,62 @@ test_predictor = add_predictor(data = test_predictor, "\\+", "add_mark")
 test_predictor = add_predictor(data = test_predictor, "\\-", "minus_mark")
 write.csv(test_predictor, "train_1505_added.csv", row.names = FALSE)
 
-for(i in ((which(colnames(test_predictor) == "nword"))+1):length(test_predictor)){
-  if(sum(test_predictor[i] * data$nword[i])<50){
-    print(colnames(test_predictor)[i])
-  }
-}
 
-chart = read_csv("train_1505_added.csv")
+#for(i in ((which(colnames(test_predictor) == "nword"))+1):length(test_predictor)){
+  #if(sum(test_predictor[i] * data$nword[i])<50){
+   # print(colnames(test_predictor)[i])
+  #}
+#}
 
+#chart = read_csv("train_1505_added.csv")
 
-sum(test_predictor[,"minus"])
-sum(test_predictor[,"5"])
-sum(test_predictor[,"4"])
-sum(test_predictor[,"3"])
-sum(test_predictor[,"2"])
-sum(test_predictor[,"1"])
-sum(test_predictor[,"$"])
-sum(test_predictor[,":)"])
-sum(test_predictor[,";)"])
-sum(test_predictor[,"omg"])
-sum(test_predictor[,"wtf"])
-sum(test_predictor[,"fuck"])
-sum(test_predictor[,"shit"])
+#head(test_predictor[(length(test_predictor)-40):length(test_predictor)])
 
-head(test_predictor[(length(test_predictor)-40):length(test_predictor)])
-
+#Call the data_transform method and clean the "chart" dataset
 chart = data_transform(chart, portion = TRUE)
+#Set "trim" variable to the column number after "nchar"
 trim = (which(colnames(chart) == "nchar")):length(chart)
-head(chart)
 ```
 
 
+**In this block we run basic MLR to the dataset**
 ```{r}
-model1 = lm(STAR ~ . , data = chart[c(2,trim)])
-#summary(model1)$coefficients[-1,4]
-yhat = predict(model1)
-yhat[yhat > 5] = 5
-yhat[yhat < 1] = 1
-resid = chart$STAR - yhat
-SSE = sum(resid^2)
+model1 = lm(STAR ~ . , data = chart[c(2,trim)])   #Run MLR of all predictors with STAR
+yhat = predict(model1)   #Calculate predicted yhat value using the prediction model
+yhat[yhat > 5] = 5   #Set all predicted values above 5 to 5
+yhat[yhat < 1] = 1   #Set all predicted values below 1 to 1
+resid = chart$STAR - yhat   #Calculate the residual values
+SSE = sum(resid^2)   #Calculate the SSE
 SSE
-summary(model1)$p_value
-plot(chart$Id, resid, xlab = "ID", ylab = "Residuals", main = "Residual Plot",pch = 23,bg = "red",cex = 1.2)
+#summary(model1)$p_value
+plot(chart$Id, resid, xlab = "ID", ylab = "Residuals", main = "Residual Plot", pch = 23,bg = "red",cex = 1.2)   #Plot the residual values versus their ID
 abline(a = 0, b = 0, col = "black", lwd = 3)
-sortResid = sort(abs(resid), decreasing = TRUE)
-Outlier = sortResid[1:100]
+sortResid = sort(abs(resid), decreasing = TRUE)   #Sort the absolute residuals in descending order
+Outlier = sortResid[1:100]  #Find the outliers with the highest 100 absolute residual values
 Outlier
 ```
-  
+
+**In this block we plot the histogram and the density plot of the residuals**
 ```{r}
 par(mfrow = c(1,2))
-hist(resid, breaks = 100, main="Histogram of Residuals", xlab = "Residuals")
-plot(density(resid), main="Kernel Density of Residuals", xlab = "Residuals")
+hist(resid, breaks = 100, main="Histogram of Residuals", xlab = "Residuals")   #Plot histogram
+plot(density(resid), main="Kernel Density of Residuals", xlab = "Residuals")   #Plot density graph
 ```
 
+**In this block we perform bagging to the dataset**
 ```{r}
-coefSum = rep(0, ncol(chart[trim]))
-interSum = 0
-count = 0
+coefSum = rep(0, ncol(chart[trim]))   #Initialize the sum of coefficients to zeros
+interSum = 0   #Initialize the sum of intercepts to zero
+count = 0   #Initialize a counting variable "count" to zero
 
-for (i in 1:100){
-  print(i)
-  list = sample(x = 1:nrow(chart), size = 5000)
-  model.random = lm(STAR ~ ., data = chart[list, c(2, trim)])
-  if(length(summary(model.random)$coefficients[-1,1]) == length(trim)){
-    coefSum = coefSum + summary(model.random)$coefficients[-1,1]
-    interSum = interSum + summary(model.random)$coefficients[1,1]
-    count = count + 1
+for (i in 1:200){   #We perform bagging 200 times
+  print(i)   #We print the number of current cycle to keep track of the bagging process
+  list = sample(x = 1:nrow(chart), size = 5000)   #We randomly come up with 5000 numbers within 1 to the number of reviews as the sample of column numbers that we draw from the dataset
+  model.random = lm(STAR ~ ., data = chart[list, c(2, trim)])   #We perform MLR on the sample
+  if(length(summary(model.random)$coefficients[-1,1]) == length(trim)){   #Check if the coefficients of the regression model match the number of predictors in the dataset
+    coefSum = coefSum + summary(model.random)$coefficients[-1,1]   #Add up the coefficients
+    interSum = interSum + summary(model.random)$coefficients[1,1]   #Add up the intercepts
+    count = count + 1   #Add one to the counting variable
   }
   #else{
     #tail(summary(model.random))
@@ -261,22 +264,37 @@ fitRaw[fitRaw > 5] = 5
 fitRaw[fitRaw < 1] = 1
 residNew = chart$star - fitRaw
 SSENew = sum(residNew^2)
+
+#write.csv(coefSum, "coefficient.csv", row.names = FALSE)
+#write.csv(interSum, "intercept.csv", row.names = FALSE)
+
+#The variable "fitRaw" will store the y hat value of the chart dataset after bagging
+fitRaw = data.matrix(chart[trim]) %*% data.matrix(coefSum/count) #Multiply the average of the sum of each model's coefficients to the number of each predictor value counted and store them into fitRaw
+fitRaw = fitRaw + interSum/count   #Add the average of sum of each model's interceps to fitRaw
+fitRaw[fitRaw > 5] = 5   #Set all predicted values above 5 to 5
+fitRaw[fitRaw < 1] = 1   #Set all predicted values below 1 to 1
+residNew = chart$STAR - fitRaw   #Calculate residuals after bagging
+SSENew = sum(residNew^2)   #Calculate SSE after bagging, and we can see how much the model has improved
 SSENew
 
 ```
 
-
+**In this block we import and clean the test dataset**
 ```{r}
-test_data = read_csv("test_Madison.csv")
-test_data = data_transform(test_data, portion = TRUE, test = TRUE, origin = chart)
+test_data = read_csv("test_Madison.csv")   #Import the "test_Madison" dataset, store it in "test_data"
+test_data = data_transform(test_data, portion = TRUE, test = TRUE, origin = chart)   #Perform data_transform on test_data to clean the dataset
+
+#test_data = read_csv("test_1519.csv")
 
 head(test_data)
 
 write.csv(test_data, "test_1519.csv", row.names = FALSE)
 test_data$PORTION = test_data$PORTION / test_data$nword
 test_trim = (which(colnames(test_data) == "nchar")):length(test_data)
+trim_test = (which(colnames(test_data) == "nchar")):length(test_data)   #Set "trim_test" to locate predictors after "nchar"
 ```
 
+**In this block calculate the fitted star review of the test dataset**
 ```{r}
 
 count = 1
@@ -293,4 +311,22 @@ result$Expected = fit_data
 fit_data[fit_data>4.5] = 5
 result
 write.csv(result, "test_result.csv", row.names = FALSE)
+
+#coefSum = summary(model1)$coefficients[-1,1]
+#interSum = summary(model1)$coefficients[1,1]
+#count = 1
+#length(coefSum/count)
+#length(test_data[trim_test])
+
+#The variable "fitR_data will store the y hat value of the test_data dataset after bagging
+fit_data = data.matrix(test_data[trim_test]) %*% data.matrix(coefSum/count)   ##Multiply the average of the sum of each model's coefficients to the number of each predictor value counted in the test_data dataset and store them into fit_data
+fit_data = fit_data + interSum/count   #Add the average of sum of each model's interceps to fit_data
+fit_data[fit_data > 5] = 5   #Set all predicted values above 5 to 5
+fit_data[fit_data < 1] = 1   #Set all predicted values below 1 to 1
+#fit_data[fit_data > 4.5] = 5
+result = as.data.frame(test_data[,1])   #Store the ID of each value into the dataframe "result"
+colnames(result)[1] = "Id"   #Name the first column of result "Id"
+result$Expected = fit_data   #Set the second column of result as "Expected" and store the fitted value into the dataframe
+write.csv(result, "test_result.csv", row.names = FALSE)   #Export this dataframe
+
 ```
