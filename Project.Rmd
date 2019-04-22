@@ -139,15 +139,18 @@ data_transform = function(data = chart, test = FALSE, portion = TRUE, create = T
 
 
 add_predictor = function(data = chart, new_pred, col_name, portion = TRUE){
-  if(col_name %in% colnames(chart)){
-    return(data)
+  if(!(col_name %in% colnames(chart))){
+    data$new_col = rep(0, nrow(data))
+    colnames(data)[ncol(data)] = col_name
   }
-  data$new_col = rep(0, nrow(data))
-  colnames(data)[ncol(data)] = col_name
+  else{
+    data[colnames(data) == col_name] = rep(0, nrow(data))
+  }
+  
   for(i in 1:nrow(data)){
-    data[i, ncol(data)] = str_count(tolower(data$TEXT[i]), new_pred)
+    data[i, colnames(data) == col_name] = str_count(tolower(data$TEXT[i]), new_pred)
     if(portion == TRUE){
-      data[i, ncol(data)] = data[i, ncol(data)] / data$nword[i]
+      data[i, colnames(data) == col_name] = data[i, colnames(data) == col_name] / data$nword[i]
     }
   }
   return(data)
@@ -202,9 +205,56 @@ trim = (which(colnames(chart) == "nchar")):length(chart)
 head(chart)
 ```
 
-
+**interaction**
 ```{r}
+chart = read_csv("train_1505_added.csv")
 model1 = lm(STAR ~ . , data = chart[c(2,trim)])
+
+inter_index = c()
+inter_value = c()
+for(i in ((which(colnames(chart) == "nword")) +1):length(chart)){
+  if(i %% 20 == 0){
+    print(i)
+  }
+  for(j in (i+1):length(chart)){
+    inter = cbind(chart[2], chart[,i], chart[,j])
+    model_inter = lm(STAR ~.^2, data = inter)
+    if(nrow(summary(model_inter)$coefficients) == 4){
+      if(summary(model_inter)$coefficients[4,4] < 0.00000001){
+        inter_index = cbind(inter_index, c(i,j))
+        inter_value = c(inter_value, summary(model_inter)$coefficients[4,4])
+      }
+    }
+  }
+}
+
+inter_index
+inter_value[1]
+sort(inter_value)
+which(inter_value == 0)
+inter_index[inter_value == 0]
+
+chart[17]
+colnames(chart)[colnames(chart) == 1] = "digit_one"
+colnames(chart)[colnames(chart) == 2] = "digit_two"
+colnames(chart)[colnames(chart) == 3] = "digit_three"
+colnames(chart)[colnames(chart) == 4] = "digit_four"
+colnames(chart)[colnames(chart) == 5] = "digit_five"
+interaction_pickup_index = inter_index[,rank(inter_value) < 100]
+interaction_pickup_index
+chart[16]
+
+save(inter_index, file = "inter_index.RData")
+save(inter_value, file = "inter_value.RData")
+?save
+
+as.formula(paste("STAR ~", paste(colnames(chart)[interaction_pickup_index[1,]], ":", colnames(chart)[interaction_pickup_index[2,]], collapse = " + ", sep = "")))
+colnames(chart)[interaction_pickup_index[1,]]
+colnames(chart)[interaction_pickup_index[2,]]
+
+?paste
+colnames(chart)[inter_index[1,]]
+
 #summary(model1)$coefficients[-1,4]
 yhat = predict(model1)
 yhat[yhat > 5] = 5
@@ -259,7 +309,26 @@ SSENew
 test_data = read_csv("test_Madison.csv")
 test_data = data_transform(test_data, portion = TRUE, test = TRUE, origin = chart)
 
-write.csv(test_transformed, "test_1504_predictor.csv", row.names = FALSE)
+test_data = read_csv("test_1519.csv")
+head(test_data[(length(test_data) -40):length(test_data)])
+str_count(tolower(test_data$TEXT[456]), ":\\)")
+    
+    
+test_data = add_predictor(data = test_data, ":\\)", "smile_face")
+test_data = add_predictor(data = test_data, ";\\)", "wink_face")
+test_data = add_predictor(data = test_data, "wtf", "wtf")
+test_data = add_predictor(data = test_data, "fuck", "fuck")
+test_data = add_predictor(data = test_data, "shit", "shit")
+test_data = add_predictor(data = test_data, "\\$", "dollar_sign")
+test_data = add_predictor(data = test_data, "1", "1")
+test_data = add_predictor(data = test_data, "2", "2")
+test_data = add_predictor(data = test_data, "3", "3")
+test_data = add_predictor(data = test_data, "4", "4")
+test_data = add_predictor(data = test_data, "5", "5")
+test_data = add_predictor(data = test_data, "minus", "minus")
+test_data = add_predictor(data = test_data, "\\+", "add_mark")
+test_data = add_predictor(data = test_data, "\\-", "minus_mark")
+
 trim = (which(colnames(test_data) == "nchar")):length(test_data)
 ```
 
