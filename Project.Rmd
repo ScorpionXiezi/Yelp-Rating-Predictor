@@ -193,54 +193,15 @@ test_predictor = add_predictor(data = test_predictor, "5", "5")
 test_predictor = add_predictor(data = test_predictor, "minus", "minus")
 test_predictor = add_predictor(data = test_predictor, "\\+", "add_mark")
 test_predictor = add_predictor(data = test_predictor, "\\-", "minus_mark")
-write.csv(test_predictor, "train_1505_added.csv", row.names = FALSE)
 
-
-#for(i in ((which(colnames(test_predictor) == "nword"))+1):length(test_predictor)){
-  #if(sum(test_predictor[i] * data$nword[i])<50){
-   # print(colnames(test_predictor)[i])
-  #}
-#}
-
-#chart = read_csv("train_1505_added.csv")
-
-#head(test_predictor[(length(test_predictor)-40):length(test_predictor)])
-
-#Call the data_transform method and clean the "chart" dataset
-chart = data_transform(chart, portion = TRUE)
-#Set "trim" variable to the column number after "nchar"
-trim = (which(colnames(chart) == "nchar")):length(chart)
-```
-
-**interaction**
-```{r}
-chart = read_csv("train_1505_added.csv")
-model1 = lm(STAR ~ . , data = chart[c(2,trim)])
-
-inter_index = c()
-inter_value = c()
-for(i in ((which(colnames(chart) == "nword")) +1):length(chart)){
-  if(i %% 20 == 0){
-    print(i)
-  }
-  for(j in (i+1):length(chart)){
-    inter = cbind(chart[2], chart[,i], chart[,j])
-    model_inter = lm(STAR ~.^2, data = inter)
-    if(nrow(summary(model_inter)$coefficients) == 4){
-      if(summary(model_inter)$coefficients[4,4] < 0.00000001){
-        inter_index = cbind(inter_index, c(i,j))
-        inter_value = c(inter_value, summary(model_inter)$coefficients[4,4])
-      }
-    }
-  }
-}
-```
-
-
-
-```{r}
 chart = read_csv("train_1505_added.csv")
 
+colnames(chart)[colnames(chart) == "PORTION"] = "PORTION_origin"
+colnames(chart)[colnames(chart) == "NAME"] = "NAME_origin"
+colnames(chart)[colnames(chart) == "CITY"] = "CITY_origin"
+colnames(chart)[colnames(chart) == "TEXT"] = "TEXT_origin"
+colnames(chart)[colnames(chart) == "STAR"] = "STAR_origin"
+colnames(chart)[colnames(chart) == "Id"] = "ID_ORIGIN"
 colnames(chart)[colnames(chart) == 1] = "digit_one"
 colnames(chart)[colnames(chart) == 2] = "digit_two"
 colnames(chart)[colnames(chart) == 3] = "digit_three"
@@ -248,41 +209,16 @@ colnames(chart)[colnames(chart) == 4] = "digit_four"
 colnames(chart)[colnames(chart) == 5] = "digit_five"
 colnames(chart) = toupper(colnames(chart))
 
-interaction_pickup_index = inter_index[,rank(inter_value) < 500]
-inter_index[,rank(inter_value) == 59]
-chart[,1505]
-save(inter_index, file = "inter_index.RData")
-save(inter_value, file = "inter_value.RData")
-?save
+write.csv(chart, "train_1520_capitalized.csv", row.names = FALSE)
 
-?paste0
-str(chart)
-paste("STAR ~.+", paste(colnames(chart)[interaction_pickup_index[1,]],":",colnames(chart)[interaction_pickup_index[2,]], collapse = " + ", sep = ""))
-as.formula(paste("STAR ~.+", paste(colnames(chart)[interaction_pickup_index[1,]],":",colnames(chart)[interaction_pickup_index[2,]], collapse = " + ", sep = "")))
+#head(test_predictor[(length(test_predictor)-40):length(test_predictor)])
 
-colnames(chart)[interaction_pickup_index[1,]]
-colnames(chart)[interaction_pickup_index[2,]]
-
-model_withInter = lm(as.formula(paste("STAR ~.+", paste(colnames(chart)[interaction_pickup_index[1,]],":",colnames(chart)[interaction_pickup_index[2,]], collapse = " + ", sep = ""))) , data = chart[c(2,trim)])
-
-
-
-
-
-yhat_int = predict(model_withInter)   #Calculate predicted yhat value using the prediction model
-yhat_int[yhat_int > 5] = 5   #Set all predicted values above 5 to 5
-yhat_int[yhat_int < 1] = 1   #Set all predicted values below 1 to 1
-resid_int = chart$STAR - yhat_int   #Calculate the residual values
-SSE_int = sum(resid_int^2)   #Calculate the SSE
-SSE_int
-
-
-
-
-
-
-
+#Call the data_transform method and clean the "chart" dataset
+chart = data_transform(chart, portion = TRUE)
+#Set "trim" variable to the column number after "nchar"
+trim = (which(colnames(chart) == "NCHAR")):length(chart)
 ```
+
 
 **In this block we run basic MLR to the dataset**
 ```{r}
@@ -375,21 +311,79 @@ test_data = add_predictor(data = test_data, "wtf", "wtf")
 test_data = add_predictor(data = test_data, "fuck", "fuck")
 test_data = add_predictor(data = test_data, "shit", "shit")
 test_data = add_predictor(data = test_data, "\\$", "dollar_sign")
-test_data = add_predictor(data = test_data, "1", "1")
-test_data = add_predictor(data = test_data, "2", "2")
-test_data = add_predictor(data = test_data, "3", "3")
-test_data = add_predictor(data = test_data, "4", "4")
-test_data = add_predictor(data = test_data, "5", "5")
+test_data = add_predictor(data = test_data, "1", "digit_one")
+test_data = add_predictor(data = test_data, "2", "digit_two")
+test_data = add_predictor(data = test_data, "3", "digit_three")
+test_data = add_predictor(data = test_data, "4", "digit_four")
+test_data = add_predictor(data = test_data, "5", "digit_five")
 test_data = add_predictor(data = test_data, "minus", "minus")
 test_data = add_predictor(data = test_data, "\\+", "add_mark")
 test_data = add_predictor(data = test_data, "\\-", "minus_mark")
+colnames(chart)[colnames(chart) == "PORTION"] = "PORTION_origin"
+colnames(chart)[colnames(chart) == "NAME"] = "NAME_origin"
+colnames(chart)[colnames(chart) == "CITY"] = "CITY_origin"
+colnames(chart)[colnames(chart) == "TEXT"] = "TEXT_origin"
+colnames(chart)[colnames(chart) == "STAR"] = "STAR_origin"
+colnames(chart)[colnames(chart) == "Id"] = "ID_ORIGIN"
+colnames(test_data) = toupper(colnames(test_data))
+write.csv(test_data, "test_1519_capitalized.csv", row.names = FALSE)
 
-which(colnames(chart) == "if")
+
+
+
 trim = (which(colnames(test_data) == "nchar")):length(test_data)
 write.csv(test_data, "test_1519.csv", row.names = FALSE)
 test_data$PORTION = test_data$PORTION / test_data$nword
-test_trim = (which(colnames(test_data) == "nchar")):length(test_data)
-trim_test = (which(colnames(test_data) == "nchar")):length(test_data)   #Set "trim_test" to locate predictors after "nchar"
+trim_test = (which(colnames(test_data) == "NCHAR")):length(test_data)   #Set "trim_test" to locate predictors after "nchar"
+```
+
+**interaction**
+```{r}
+chart = read_csv("train_1520_capitalized.csv")
+model1 = lm(STAR ~ . , data = chart[c(2,trim)])
+
+inter_index = c()
+inter_value = c()
+for(i in ((which(colnames(chart) == "nword")) +1):length(chart)){
+  if(i %% 20 == 0){
+    print(i)
+  }
+  for(j in (i+1):length(chart)){
+    inter = cbind(chart[2], chart[,i], chart[,j])
+    model_inter = lm(STAR ~.^2, data = inter)
+    if(nrow(summary(model_inter)$coefficients) == 4){
+      if(summary(model_inter)$coefficients[4,4] < 0.00000001){
+        inter_index = cbind(inter_index, c(i,j))
+        inter_value = c(inter_value, summary(model_inter)$coefficients[4,4])
+      }
+    }
+  }
+}
+
+
+
+
+save(inter_index, file = "inter_index.RData")
+save(inter_value, file = "inter_value.RData")
+
+model_withInter = lm(as.formula(paste("STAR_ORIGIN ~.+", paste(colnames(chart)[inter_index[1,]],":",colnames(chart)[inter_index[2,]], collapse = " + ", sep = ""))) , data = chart[c(2,trim)])
+
+save(model_withInter, file = "model_withInter.RData")
+
+fit_int = predict(model_withInter, test_data[,trim_test])
+
+yhat_int = predict(model_withInter)   #Calculate predicted yhat value using the prediction model
+
+
+yhat_int[yhat_int > 5] = 5   #Set all predicted values above 5 to 5
+yhat_int[yhat_int < 1] = 1   #Set all predicted values below 1 to 1
+
+
+resid_int = chart$STAR - yhat_int   #Calculate the residual values
+SSE_int = sum(resid_int^2)   #Calculate the SSE
+SSE_int
+
+
 ```
 
 **In this block calculate the fitted star review of the test dataset**
