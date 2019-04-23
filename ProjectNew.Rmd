@@ -380,3 +380,21 @@ colnames(result)[1] = "Id"   #Name the first column of result "Id"
 result$Expected = superPredict  #Set the second column of result as "Expected" and store the fitted value into the dataframe
 write.csv(result, "test_result.csv", row.names = FALSE)   #Export this dataframe
 ```
+
+**SSE plot**
+```{r}
+library(ggpubr)
+SSE_chart = as.data.frame(c(44077, 60084, 40601, 33853, 33389, 26014, 12006, 16859))
+colnames(SSE_chart) = c("value")
+SSE_chart$name = c("MLR", "multinomial logistic", "with ?!. & divided by nword", "1514 predictors", "1514 bagging", "1514 logistic & bagging", "1514 logistic & interaction", "1514 logistic, interaction & bagging")
+SSE_chart$name
+?ggbarplot
+ggbarplot(SSE_chart, x = "name", y = "value",
+          fill = "lightgray", 
+          xlab = "Model", ylab = "SSE",
+          ylim = c(0, 70000),
+          x.text.angle = 45,
+          label = TRUE
+          )
+
+```
