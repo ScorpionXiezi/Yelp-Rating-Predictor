@@ -21,7 +21,6 @@ output: html_document
 library(readr)   #load readr
 library(stringr)   #load stringr
 library(nnet)
-library(quanteda)
 
 rm(list = ls())   #clear all current objects in workspace
 chart = read_csv("train_Madison.csv")   #read train_Madison file into chart
@@ -254,7 +253,7 @@ count = 0   #Initialize a counting variable "count" to zero
 for (i in 1:200){   #We perform bagging 200 times
   print(i)   #We print the number of current cycle to keep track of the bagging process
   list = sample(x = 1:nrow(chart), size = 5000)   #We randomly come up with 5000 numbers within 1 to the number of reviews as the sample of column numbers that we draw from the dataset
-  model_random_withInter = lm(as.formula(paste("STAR_ORIGIN ~.+", paste(colnames(chart)[inter_index[1,]],":",colnames(chart)[inter_index[2,]], collapse = " + ", sep = ""))) , data = chart[c(2,trim)])
+  model.random = lm(STAR ~ ., data = chart[list, c(2, trim)])   #We perform MLR on the sample
   if(length(summary(model.random)$coefficients[-1,1]) == length(trim)){   #Check if the coefficients of the regression model match the number of predictors in the dataset
     coefSum = coefSum + summary(model.random)$coefficients[-1,1]   #Add up the coefficients
     interSum = interSum + summary(model.random)$coefficients[1,1]   #Add up the intercepts
@@ -264,15 +263,6 @@ for (i in 1:200){   #We perform bagging 200 times
     #tail(summary(model.random))
   #}
 }
-
-
-inter_index = cbind(c(59, 35), c(42, 651), c(420, 1344))
-as.formula(paste("STAR ~", paste(colnames(chart)[inter_index[1,]], ":", colnames(chart)[inter_index[2,]], collapse = " + ", sep = "")))
-
-
-colnames(chart)[inter_index[1,]]
-
-?save
 
 fitRaw = data.matrix(chart[trim]) %*% data.matrix(coefSum/count)
 fitRaw = fitRaw + interSum/count
@@ -333,6 +323,7 @@ trim_test = (which(colnames(test_data) == "NCHAR")):length(test_data)   #Set "tr
 chart = read_csv("train_1520_capitalized.csv")
 model1 = lm(STAR ~ . , data = chart[c(2,trim)])
 
+#find significant interactions
 inter_index = c()
 inter_value = c()
 for(i in ((which(colnames(chart) == "nword")) +1):length(chart)){
@@ -350,8 +341,6 @@ for(i in ((which(colnames(chart) == "nword")) +1):length(chart)){
     }
   }
 }
-
-
 
 
 save(inter_index, file = "inter_index.RData")
@@ -379,6 +368,12 @@ count = 1
 coefSum = summary(model1)$coefficients[-1,1]
 interSum = summary(model1)$coefficients[1,1]
 
+coeff_bagging = read.csv("coefficient.csv")/102
+intercept_bagging = read.csv("intercept.csv")/102
+
+fit_bagging = data.matrix(test_data[trim_test]) %*% data.matrix(coeff_bagging)
+fit_bagging = fit_bagging + as.integer(intercept_bagging)
+
 fit_data = data.matrix(test_data[test_trim]) %*% data.matrix(coefSum/count)
 fit_data = fit_data + interSum/count
 fit_data[fit_data > 5] = 5
@@ -395,9 +390,6 @@ fit_multinom = as.double(predict(model_multinom, newdata = test_data_lower[,trim
 
 #interaction model
 fit_int = predict(model_withInter, test_data[,trim_test])
-fit_int[fit_int > 5] = 5   #Set all predicted values above 5 to 5
-fit_int[fit_int < 1] = 1   #Set all predicted values below 1 to 1
-fit_int
 
 #The variable "fitR_data will store the y hat value of the test_data dataset after bagging
 fit_data = data.matrix(test_data[trim_test]) %*% data.matrix(coefSum/count)   ##Multiply the average of the sum of each model's coefficients to the number of each predictor value counted in the test_data dataset and store them into fit_data
@@ -406,6 +398,7 @@ fit_data[fit_data > 5] = 5   #Set all predicted values above 5 to 5
 fit_data[fit_data < 1] = 1   #Set all predicted values below 1 to 1
 result = as.data.frame(test_data[,1])   #Store the ID of each value into the dataframe "result"
 colnames(result)[1] = "Id"   #Name the first column of result "Id"
-result$Expected = fit_int*0.55+fit_multinom*0.45   #Set the second column of result as "Expected" and store the fitted value into the dataframe
+result$Expected = fit_int*0.4+fit_multinom*0.4+fit_bagging*0.2   #Set the second column of result as "Expected" and store the fitted value into the dataframe
+result$Expected
 write.csv(result, "test_result.csv", row.names = FALSE)   #Export this dataframe
 ```
