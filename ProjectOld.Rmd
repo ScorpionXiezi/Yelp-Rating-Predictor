@@ -273,8 +273,6 @@ for(i in ((which(colnames(chart) == "nword")) +1):length(chart)){
 
 model_withInter = lm(as.formula(paste("STAR_ORIGIN ~.+", paste(colnames(chart)[inter_index[1,]],":",colnames(chart)[inter_index[2,]], collapse = " + ", sep = ""))) , data = chart[c(2,trim)])
 
-fit_int = predict(model_withInter, test_data[,trim_test])
-
 yhat_int = predict(model_withInter)   #Calculate predicted yhat value using the prediction model
 
 
@@ -282,7 +280,7 @@ yhat_int[yhat_int > 5] = 5   #Set all predicted values above 5 to 5
 yhat_int[yhat_int < 1] = 1   #Set all predicted values below 1 to 1
 
 
-resid_int = chart$STAR - yhat_int   #Calculate the residual values
+resid_int = chart$STAR_ORIGIN - yhat_int   #Calculate the residual values
 SSE_int = sum(resid_int^2)   #Calculate the SSE
 SSE_int
 ```
@@ -326,32 +324,6 @@ SSENew
 
 ```
 
-**In this block we import and clean the test dataset**
-```{r}
-test_data = read_csv("test_Madison.csv")   #Import the "test_Madison" dataset, store it in "test_data"
-test_data = data_transform(test_data, portion = TRUE, test = TRUE, origin = chart)   #Perform data_transform on test_data to clean the dataset
-
-#test_data = read_csv("test_1519.csv")
-
-trim_test = (which(colnames(test_data) == "nchar")):length(test_data)   #Set "trim_test" to locate predictors after "nchar"
-```
-
-**In this block we calculate the fitted star review of the test dataset after bagging**
-```{r}
-#coefSum = summary(model1)$coefficients[-1,1]
-#interSum = summary(model1)$coefficients[1,1]
-#count = 1
-#length(coefSum/count)
-#length(test_data[trim_test])
-
-#The variable "fitR_data will store the y hat value of the test_data dataset after bagging
-fit_data = data.matrix(test_data[trim_test]) %*% data.matrix(coefSum/count)   ##Multiply the average of the sum of each model's coefficients to the number of each predictor value counted in the test_data dataset and store them into fit_data
-fit_data = fit_data + interSum/count   #Add the average of sum of each model's interceps to fit_data
-fit_data[fit_data > 5] = 5   #Set all predicted values above 5 to 5
-fit_data[fit_data < 1] = 1   #Set all predicted values below 1 to 1
-#fit_data[fit_data > 4.5] = 5
-```
-
 **In this block we perform logistic regression to the transformed dataset**
 ```{r}
 model_multinom = multinom(STAR ~ . , data = chart[c(2,trim)], MaxNWts = 10000)   #We perform logistic regression on the sample
@@ -374,6 +346,61 @@ SSE_multi
   #print(i)
   #print(SSE_combine)
 #}
+```
+
+**In this block we import and clean the test dataset**
+```{r}
+test_data = read_csv("test_Madison.csv")   #Import the "test_Madison" dataset, store it in "test_data"
+test_data = data_transform(test_data, portion = TRUE, test = TRUE, origin = chart)   #Perform data_transform on test_data to clean the dataset
+
+test_data = add_predictor(data = test_data, ":\\)", "smile_face")
+test_data = add_predictor(data = test_data, ";\\)", "wink_face")
+test_data = add_predictor(data = test_data, "wtf", "wtf")
+test_data = add_predictor(data = test_data, "fuck", "fuck")
+test_data = add_predictor(data = test_data, "shit", "shit")
+test_data = add_predictor(data = test_data, "\\$", "dollar_sign")
+test_data = add_predictor(data = test_data, "1", "digit_one")
+test_data = add_predictor(data = test_data, "2", "digit_two")
+test_data = add_predictor(data = test_data, "3", "digit_three")
+test_data = add_predictor(data = test_data, "4", "digit_four")
+test_data = add_predictor(data = test_data, "5", "digit_five")
+test_data = add_predictor(data = test_data, "minus", "minus")
+test_data = add_predictor(data = test_data, "\\+", "add_mark")
+test_data = add_predictor(data = test_data, "\\-", "minus_mark")
+colnames(chart)[colnames(chart) == "PORTION"] = "PORTION_origin"
+colnames(chart)[colnames(chart) == "NAME"] = "NAME_origin"
+colnames(chart)[colnames(chart) == "CITY"] = "CITY_origin"
+colnames(chart)[colnames(chart) == "TEXT"] = "TEXT_origin"
+colnames(chart)[colnames(chart) == "STAR"] = "STAR_origin"
+colnames(chart)[colnames(chart) == "Id"] = "ID_ORIGIN"
+colnames(test_data) = toupper(colnames(test_data))
+#write.csv(test_data, "test_1519_capitalized.csv", row.names = FALSE)
+
+trim_test = (which(colnames(test_data) == "NCHAR")):length(test_data)   #Set "trim_test" to locate predictors after "nchar"
+#test_data = read_csv("test_1519.csv")
+```
+
+**In this block we calculate the fitted star review of the test dataset after bagging**
+```{r}
+#coefSum = summary(model1)$coefficients[-1,1]
+#interSum = summary(model1)$coefficients[1,1]
+#count = 1
+#length(coefSum/count)
+#length(test_data[trim_test])
+
+#The variable "fitR_data will store the y hat value of the test_data dataset after bagging
+fit_data = data.matrix(test_data[trim_test]) %*% data.matrix(coefSum/count)   ##Multiply the average of the sum of each model's coefficients to the number of each predictor value counted in the test_data dataset and store them into fit_data
+fit_data = fit_data + interSum/count   #Add the average of sum of each model's interceps to fit_data
+fit_data[fit_data > 5] = 5   #Set all predicted values above 5 to 5
+fit_data[fit_data < 1] = 1   #Set all predicted values below 1 to 1
+#fit_data[fit_data > 4.5] = 5
+```
+
+**In this block we calculate the fitted star review of the test dataset after interaction**
+```{r}
+fit_int = predict(model_withInter, test_data[,trim_test])   #Calculate the fitted star review of the test dataset using interaction model
+fit_int[fit_int > 5] = 5   #Set all predicted values above 5 to 5
+fit_int[fit_int < 1] = 1   #Set all predicted values below 1 to 1
 ```
 
 **In this block we calculate the fitted star review based on the logistic model plus the fitted star review after bagging. We average the results as a super predictor of the dataset**
