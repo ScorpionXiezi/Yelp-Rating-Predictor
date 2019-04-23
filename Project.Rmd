@@ -20,6 +20,7 @@ output: html_document
 ```{r}
 library(readr)   #load readr
 library(stringr)   #load stringr
+library(nnet)
 library(quanteda)
 
 rm(list = ls())   #clear all current objects in workspace
@@ -253,7 +254,7 @@ count = 0   #Initialize a counting variable "count" to zero
 for (i in 1:200){   #We perform bagging 200 times
   print(i)   #We print the number of current cycle to keep track of the bagging process
   list = sample(x = 1:nrow(chart), size = 5000)   #We randomly come up with 5000 numbers within 1 to the number of reviews as the sample of column numbers that we draw from the dataset
-  model.random = lm(STAR ~ ., data = chart[list, c(2, trim)])   #We perform MLR on the sample
+  model_random_withInter = lm(as.formula(paste("STAR_ORIGIN ~.+", paste(colnames(chart)[inter_index[1,]],":",colnames(chart)[inter_index[2,]], collapse = " + ", sep = ""))) , data = chart[c(2,trim)])
   if(length(summary(model.random)$coefficients[-1,1]) == length(trim)){   #Check if the coefficients of the regression model match the number of predictors in the dataset
     coefSum = coefSum + summary(model.random)$coefficients[-1,1]   #Add up the coefficients
     interSum = interSum + summary(model.random)$coefficients[1,1]   #Add up the intercepts
@@ -299,11 +300,7 @@ SSENew
 test_data = read_csv("test_Madison.csv")   #Import the "test_Madison" dataset, store it in "test_data"
 test_data = data_transform(test_data, portion = TRUE, test = TRUE, origin = chart)   #Perform data_transform on test_data to clean the dataset
 
-#test_data = read_csv("test_1519.csv")
-
-head(test_data)
-
-test_data = read.csv("test_1519.csv")
+test_data = read_csv("test_1519_capitalized.csv")
 
 test_data = add_predictor(data = test_data, ":\\)", "smile_face")
 test_data = add_predictor(data = test_data, ";\\)", "wink_face")
@@ -328,12 +325,6 @@ colnames(chart)[colnames(chart) == "Id"] = "ID_ORIGIN"
 colnames(test_data) = toupper(colnames(test_data))
 write.csv(test_data, "test_1519_capitalized.csv", row.names = FALSE)
 
-
-
-
-trim = (which(colnames(test_data) == "nchar")):length(test_data)
-write.csv(test_data, "test_1519.csv", row.names = FALSE)
-test_data$PORTION = test_data$PORTION / test_data$nword
 trim_test = (which(colnames(test_data) == "NCHAR")):length(test_data)   #Set "trim_test" to locate predictors after "nchar"
 ```
 
@@ -370,25 +361,20 @@ model_withInter = lm(as.formula(paste("STAR_ORIGIN ~.+", paste(colnames(chart)[i
 
 save(model_withInter, file = "model_withInter.RData")
 
-fit_int = predict(model_withInter, test_data[,trim_test])
-
 yhat_int = predict(model_withInter)   #Calculate predicted yhat value using the prediction model
-
 
 yhat_int[yhat_int > 5] = 5   #Set all predicted values above 5 to 5
 yhat_int[yhat_int < 1] = 1   #Set all predicted values below 1 to 1
 
 
-resid_int = chart$STAR - yhat_int   #Calculate the residual values
+resid_int = chart$STAR_ORIGIN - yhat_int   #Calculate the residual values
 SSE_int = sum(resid_int^2)   #Calculate the SSE
 SSE_int
-
 
 ```
 
 **In this block calculate the fitted star review of the test dataset**
 ```{r}
-
 count = 1
 coefSum = summary(model1)$coefficients[-1,1]
 interSum = summary(model1)$coefficients[1,1]
@@ -403,11 +389,15 @@ result$Expected = fit_data
 result
 write.csv(result, "test_result.csv", row.names = FALSE)
 
-#coefSum = summary(model1)$coefficients[-1,1]
-#interSum = summary(model1)$coefficients[1,1]
-#count = 1
-#length(coefSum/count)
-#length(test_data[trim_test])
+test_data_lower = read_csv("test_1519.csv")
+colnames(test_data_lower)[colnames(test_data_lower) == "TRUE"] = "true"
+fit_multinom = as.double(predict(model_multinom, newdata = test_data_lower[,trim_test]))
+
+#interaction model
+fit_int = predict(model_withInter, test_data[,trim_test])
+fit_int[fit_int > 5] = 5   #Set all predicted values above 5 to 5
+fit_int[fit_int < 1] = 1   #Set all predicted values below 1 to 1
+fit_int
 
 #The variable "fitR_data will store the y hat value of the test_data dataset after bagging
 fit_data = data.matrix(test_data[trim_test]) %*% data.matrix(coefSum/count)   ##Multiply the average of the sum of each model's coefficients to the number of each predictor value counted in the test_data dataset and store them into fit_data
@@ -416,7 +406,6 @@ fit_data[fit_data > 5] = 5   #Set all predicted values above 5 to 5
 fit_data[fit_data < 1] = 1   #Set all predicted values below 1 to 1
 result = as.data.frame(test_data[,1])   #Store the ID of each value into the dataframe "result"
 colnames(result)[1] = "Id"   #Name the first column of result "Id"
-result$Expected = fit_data   #Set the second column of result as "Expected" and store the fitted value into the dataframe
+result$Expected = fit_int*0.55+fit_multinom*0.45   #Set the second column of result as "Expected" and store the fitted value into the dataframe
 write.csv(result, "test_result.csv", row.names = FALSE)   #Export this dataframe
-
 ```
