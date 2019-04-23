@@ -349,16 +349,27 @@ save(inter_value, file = "inter_value.RData")
 model_withInter = lm(as.formula(paste("STAR_ORIGIN ~.+", paste(colnames(chart)[inter_index[1,]],":",colnames(chart)[inter_index[2,]], collapse = " + ", sep = ""))) , data = chart[c(2,trim)])
 
 save(model_withInter, file = "model_withInter.RData")
+```
 
+**calculate SSE**
+```{r}
 yhat_int = predict(model_withInter)   #Calculate predicted yhat value using the prediction model
 
-yhat_int[yhat_int > 5] = 5   #Set all predicted values above 5 to 5
-yhat_int[yhat_int < 1] = 1   #Set all predicted values below 1 to 1
+yhat_bagging = data.matrix(chart[trim]) %*% data.matrix(coeff_bagging)
+yhat_bagging = yhat_bagging + as.integer(intercept_bagging)
+
+yhat_multinom = as.double(predict(model_multinom))
+
+yhat_combine = yhat_int*0.4 + yhat_multinom*0.4 + yhat_bagging*0.2
+
+yhat_combine[yhat_combine > 5] = 5   #Set all predicted values above 5 to 5
+yhat_combine[yhat_combine < 1] = 1   #Set all predicted values below 1 to 1
 
 
-resid_int = chart$STAR_ORIGIN - yhat_int   #Calculate the residual values
-SSE_int = sum(resid_int^2)   #Calculate the SSE
-SSE_int
+
+resid_combine = chart$STAR_ORIGIN - yhat_combine   #Calculate the residual values
+SSE_combine = sum(resid_combine^2)   #Calculate the SSE
+SSE_combine
 
 ```
 
