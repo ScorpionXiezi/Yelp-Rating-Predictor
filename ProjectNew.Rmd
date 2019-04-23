@@ -30,7 +30,7 @@ chart = read_csv("train_Madison.csv")   #read train_Madison file into chart
 ```{r}
 trimOriginal = (which(colnames(chart) == "nchar")):length(chart)
 modelOriginal = lm(star ~ . , data = chart[c(2,trimOriginal)])   #Run MLR of all predictors with star
-yhatOriginal = predict(chart)   #Calculate predicted yhat value using the prediction model
+yhatOriginal = predict(modelOriginal)   #Calculate predicted yhat value using the prediction model
 yhatOriginal[yhatOriginal > 5] = 5   #Set all predicted values above 5 to 5
 yhatOriginal[yhatOriginal < 1] = 1   #Set all predicted values below 1 to 1
 residOriginal = chart$star - yhatOriginal   #Calculate residuals of the original model
@@ -234,6 +234,8 @@ colnames(chart)[colnames(chart) == 4] = "digit_four"
 colnames(chart)[colnames(chart) == 5] = "digit_five"
 colnames(chart) = toupper(colnames(chart))   #Capitalize call column names
 
+chart = read_csv("train_1520_capitalized.csv")
+
 #Set "trim" variable to the column number after "nchar"
 trim = (which(colnames(chart) == "NCHAR")):length(chart)
 ```
@@ -259,7 +261,7 @@ for(i in ((which(colnames(chart) == "NWORD")) +1):length(chart)){
   }
   for(j in (i+1):length(chart)){
     inter = cbind(chart[2], chart[,i], chart[,j])   #Include STAR_origin, ith and jth column as the dataframe for interation
-    model_inter = lm(STAR_origin ~.^2, data = inter)   #Model interation of ith, jth predictor versus STAR_origin
+    model_inter = lm(STAR_ORIGIN ~.^2, data = inter)   #Model interation of ith, jth predictor versus STAR_origin
     if(nrow(summary(model_inter)$coefficients) == 4){   #Test if interation exists
       if(summary(model_inter)$coefficients[4,4] < 0.00000001){   #Test if interattion is significant
         inter_index = cbind(inter_index, c(i,j))   #Store the index of the significant interation predictors
@@ -272,7 +274,6 @@ for(i in ((which(colnames(chart) == "NWORD")) +1):length(chart)){
 model_withInter = lm(as.formula(paste("STAR_ORIGIN ~.+", paste(colnames(chart)[inter_index[1,]],":",colnames(chart)[inter_index[2,]], collapse = " + ", sep = ""))) , data = chart[c(2,trim)])   #Run interation regression based on the chosen predictors
 
 yhat_int = predict(model_withInter)   #Calculate predicted yhat value using the prediction model
-
 
 yhat_int[yhat_int > 5] = 5   #Set all predicted values above 5 to 5
 yhat_int[yhat_int < 1] = 1   #Set all predicted values below 1 to 1
@@ -309,17 +310,13 @@ fitRaw[fitRaw < 1] = 1   #Set all predicted values below 1 to 1
 residNew = chart$STAR_ORIGIN - fitRaw   #Calculate residuals after bagging
 SSENew = sum(residNew^2)   #Calculate SSE after bagging, and we can see how much the model has improved
 SSENew
-
 ```
 
 **In this block we perform logistic regression to the transformed dataset**
 ```{r}
 model_multinom = multinom(STAR_ORIGIN ~ . , data = chart[c(2,trim)], MaxNWts = 10000)   #We perform logistic regression on the sample
-#summary(model1)$coefficients[-1,4]
 yhatMulti = predict(model_multinom)   #Calculate predicted yhat value using the logistic model
 yhatMulti = as.numeric(yhatMulti)   #Convert the catagorical data to numeric data
-yhatMulti[yhatMulti > 5] = 5   #Set all predicted values above 5 to 5
-yhatMulti[yhatMulti < 1] = 1   #Set all predicted values below 1 to 1
 resid_multi = chart$STAR_ORIGIN - yhatMulti   #Calculate residuals of the logistic model
 SSE_multi = sum(resid_multi^2)   #Calculate SSE
 SSE_multi
@@ -360,23 +357,20 @@ trim_test = (which(colnames(test_data) == "NCHAR")):length(test_data)   #Set "tr
 #The variable "fitR_data will store the y hat value of the test_data dataset after bagging
 fit_bagging = data.matrix(test_data[trim_test]) %*% data.matrix(coefSum/count)   ##Multiply the average of the sum of each model's coefficients to the number of each predictor value counted in the test_data dataset and store them into fit_data
 fit_bagging = fit_bagging + interSum/count   #Add the average of sum of each model's interceps to fit_data
-fit_bagging[fit_bagging > 5] = 5   #Set all predicted values above 5 to 5
-fit_bagging[fit_bagging < 1] = 1   #Set all predicted values below 1 to 1
 fit_bagging = fit_bagging[,1]   #Convert the fitted data after bagging to a vector
-#fit_data[fit_data > 4.5] = 5
 ```
 
 **In this block we calculate the fitted star review of the test dataset after interaction**
 ```{r}
 fit_int = predict(model_withInter, test_data[,trim_test])   #Calculate the fitted star review of the test dataset using interaction model
-fit_int[fit_int > 5] = 5   #Set all predicted values above 5 to 5
-fit_int[fit_int < 1] = 1   #Set all predicted values below 1 to 1
 ```
 
 **In this block we calculate the fitted star review based on the logistic model plus the fitted star review after bagging. We average the results as a super predictor of the dataset**
 ```{r}
 fit_multinom = as.double(predict(model_multinom, newdata = test_data))   #Calculate the fitted star review of the test dataset and transform the catagorical variables to doubles
 superPredict = fit_int*0.4+fit_multinom*0.4+fit_bagging*0.2   #Combine all fitted values
+superPredict[superPredict > 5] = 5   #Set all values greater than 5 to 5
+superPredict[superPredict < 1] = 1   #Set all values less than 1 to 1
 ```
 
 **In this block we export our prediction result**
